@@ -1,0 +1,69 @@
+
+# from loguru import logger
+from ..config import config
+import sys
+
+from loguru import logger
+
+def setup_logger(log_file=config.LoggingConfiguration.Filename):
+    logger.remove()  # Remove default handler
+
+    # One log file, multiple filters per module
+    logger.add(
+        log_file,
+        level=config.LoggingConfiguration.DefaultLevel,
+        format=config.LoggingConfiguration.Format,
+        enqueue=True,
+        mode="w",
+        filter={
+            "address": config.FileLoggingLevels.Address,    
+            # "address": "DEBUG",  # Set to DEBUG for address module
+        }
+    )
+
+    logger.info("Logger setup complete with file: {}", log_file)
+
+    return logger
+
+setup_logger()
+
+
+def filter_by_name(record):
+    name = record["extra"].get("name", "")
+    pass
+    return True
+    # level = LOG_LEVELS.get(name)
+    if level is None:
+        return True  # Default: log everything
+    return record["level"].no >= logger.level(level).no
+
+logger.remove()
+logger.add(
+    "analysis.log",
+    level="DEBUG",  # Lowest level, filtering is done by filter function
+    format="{time} | {level} | {extra[name]} | {message}",
+    filter=filter_by_name,
+    enqueue=True,
+    mode="w"
+)
+
+# Console logging
+logger.add(
+    sys.stdout,
+    level="DEBUG",
+    format="<green>{time:HH:mm:ss}</green> | <level>{level}</level> | <cyan>{extra[name]}</cyan> | <level>{message}</level>",
+    filter=filter_by_name,
+    enqueue=True
+)
+
+# from loguru import logger
+
+# logger = logger.bind(name="Address")
+
+# logger.debug("This is a debug message")   # Will not show unless level is DEBUG
+# logger.warning("This is a warning")       # Will show if level is WARNING or lower
+
+# from loguru import logger
+
+# logger = logger.bind(name="BWAnalysis")
+# logger.debug("Main analysis started")

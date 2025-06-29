@@ -1,0 +1,28 @@
+from el_analysis import config, logging
+
+def get_connector_by_part_number(part_number: str):
+    """
+    Retrieves a connector by its part number.
+    
+    Args:
+        part_number (str): The part number of the connector to retrieve.
+    
+    Returns:
+        Connector: The connector with the specified part number.
+    
+    Raises:
+        ValueError: If no connector with the specified part number exists.
+    """
+    from el_analysis.models.physical.connector import Connector
+
+    if not part_number:
+        raise ValueError("Part number cannot be empty.")
+
+    connector = Connector()
+    connector.part.part_number = part_number    
+
+    if not connector:
+        logging.error(f"Connector with part number {part_number} not found.")
+        raise ValueError(f"Connector with part number {part_number} not found.")
+    
+    return connector
