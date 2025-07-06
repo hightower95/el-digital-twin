@@ -1,0 +1,49 @@
+from dataclasses import dataclass
+from typing import List, Optional
+from el_analysis import Project
+
+@dataclass(frozen=True)
+class ProjectDocs:
+    short_name: str
+    device_list_filename: str
+    connection_list_filename: str
+    connection_table_filename: Optional[str] = None
+    
+C_project_docs = ProjectDocs(short_name="C", device_list_filename="device_list.txt", connection_list_filename="connection_list.txt")
+D_project_docs = ProjectDocs(short_name="D", device_list_filename="device_list_D.txt", connection_list_filename="connection_list_D.txt")
+
+
+# Create a project instance
+project = Project("Project Name", default_location="C")
+
+
+# We can use the load methods to load device and connection data from files, in this case for E3 files from "C" project
+project.load_device_list_file(C_project_docs.device_list_filename, default_location=C_project_docs.short_name)
+project.load_connection_list_file(C_project_docs.connection_list_filename, default_location=C_project_docs.short_name)
+
+# We can append additional data from another project, in this case "D"
+project.load_device_list_file(D_project_docs.device_list_filename, default_location=D_project_docs.short_name)
+
+# We can also have multiple ways to load data 
+project.load_connection_table_file(D_project_docs.connection_table_filename, default_location=D_project_docs.short_name)
+
+from el_analysis import Address
+# We can even "hand load" data from a list of devices
+devices: List[str] = ["C.A2.X1.13", "C.A2.X1.14", "C.A2.X2.15"]
+for device_address in devices:
+    new_device = project.new_device(device_address, overwrite_existing=False)
+
+# Or "hand load" connections
+connections: List[str] = [("C.A2.X1.13", "C.A2.X1.14"), ("C.A2.X1.14", "C.A2.X2.15")]
+for connection in connections:
+    a, b = connection
+    a = Address.from_string(a)
+    b = Address.from_string(b)
+
+    new_connection = project.new_connection(a, b)
+
+
+# for additional convenience, we can also pass in the ProjectDocs dataclass
+new_project = e3_analysis.load_project_from_docs(short_name=C_project_docs.short_name,
+                                              device_list_filename=C_project_docs.device_list_filename,
+                                              connection_list_filename=C_project_docs.connection_list_filename,)

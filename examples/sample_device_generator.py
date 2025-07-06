@@ -33,6 +33,16 @@ devices = [
     "KA2",
 ]
 
+cables = [
+    "W10",
+    "W11",
+    "W12",      
+    "W13",
+    "W14",
+    "W15",
+    "W16",  
+]
+
 min_connectors = 1
 max_connectors = 7
 
@@ -50,6 +60,17 @@ with open(output_filename, "w") as fp:
             chosen_part_number = random.choice(generated_part_numbers)
 
             fp.write(f"+{location}+{device}.X{x},{chosen_part_number}\n")
+
+    for cable in cables:
+        print(cable)
+
+        connector_count = random.randint(2, 6)
+
+        for x in range(1, connector_count):
+
+            chosen_part_number = random.choice(generated_part_numbers)
+
+            fp.write(f"+{location}+{cable}.X{x},{chosen_part_number}\n")
 
 
 
