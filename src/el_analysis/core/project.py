@@ -112,6 +112,24 @@ class Project:
         
         new_device = location.new_device(name)        
         return new_device
+    
+    def summarize(self):
+        """
+        Prints a summary of the project, including the number of devices and their locations.
+        """
+        print(f"Project Summary for {self.name}:")
+        print(f"Total Devices: {len(self.devices)}")
+        
+        location_counts = {}
+        for device in self.devices:
+            loc = device.location if hasattr(device, 'location') else None
+            if loc:
+                location_counts[loc] = location_counts.get(loc, 0) + 1
+            else:
+                location_counts["<no location>"] = location_counts.get("<no location>", 0) + 1
+        
+        for loc, count in location_counts.items():
+            print(f"Location: {loc}, Devices: {count}")
 
     def __repr__(self):
         # Count devices per location

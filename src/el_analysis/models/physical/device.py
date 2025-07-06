@@ -7,7 +7,7 @@ print(f"Loaded {__name__} module successfully.")
 if TYPE_CHECKING:
     from el_analysis.models import Interface
     from el_analysis.models.physical.connector import Connector
-    from el_analysis import Address, config
+    from el_analysis import Address, config, Location
 
 from typing import Optional, Any, List
 from el_analysis import logging
@@ -34,10 +34,22 @@ class Device:
         self.long_name = long_name
         self._interfaces: dict[str, Interface] = {}
 
+        self.is_cable = False
+        if self.name.startswith("W"):
+            self.is_cable = True
+            logging.debug(f"Device {self.name} is identified as a cable.")
+
     @property
     def interfaces(self) -> List[Interface]:
         """Returns a list of interfaces associated with this device."""
         return list(self._interfaces.values())
+    
+    @property
+    def location(self) -> Optional[Location]:
+        """Returns the location of the device, if available."""
+        if self.parent and isinstance(self.parent, Location):
+            return self.parent
+        return None
 
     def _make_interface(self, name, *args, **kwargs) -> Interface:
         from el_analysis.models import Interface
