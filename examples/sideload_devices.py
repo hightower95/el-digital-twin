@@ -48,4 +48,5 @@ for line in file_data.splitlines():
     else:
         print("Could not create interface for address:", address_str)
 
-project.summarize()
+if __name__ == "__main__":
+    project.summarize()

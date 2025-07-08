@@ -76,7 +76,18 @@ class Project:
         device = location.get_device_by_address(address, create_if_not_exists=create_if_not_exists)
 
         if device is not None:
-            return device
+            if address.is_interface:
+                # If the address is an interface, we need to ensure the device is created
+                if not device.get_interface(address.interface):
+                    return None
+                
+                else:
+                    # If the device exists, return it
+                    return device.get_interface(address.interface)
+            
+            else:
+
+                return device
         
         logging.warning(f"Device with address {address} not found in project {self.name} at location {location_name}")
         return None
@@ -106,6 +117,7 @@ class Project:
             Device: The newly created device.
         """
         from el_analysis.models.physical.device import Device
+
         
         if location is None:
             location = self.default_location
@@ -138,3 +150,15 @@ class Project:
 
         location_str = ", ".join(f"{loc}: {count}" for loc, count in location_counts.items())
         return f"Project(name={self.name}, devices={len(self.devices)}, device_counts_by_location={{ {location_str} }})"
+    
+    def create_cable_summary(self):
+        from el_analysis.utils.summarize_project_cables import get_cable_summary
+        return get_cable_summary(self)
+    
+    def create_device_summary(self):
+        from el_analysis.utils.summarize_project_devices import get_device_summary
+        return get_device_summary(self)
+    
+    def create_interface_summary(self):
+        from el_analysis.utils.summarise_project_connectors import get_connector_summary
+        return get_connector_summary(self)

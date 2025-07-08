@@ -32,6 +32,7 @@ class Interface:
        
         self.connector = connector 
         self._pins: dict[str, Pin] = {}  #TODO: Import pins from connector part
+        self.connected_to: Optional[Interface] = None  # Reference to another interface this one is connected to
     
     def _validation(self, interface_name):
         if config.Interface.ValidateInterfaceName:
