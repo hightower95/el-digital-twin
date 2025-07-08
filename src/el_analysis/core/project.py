@@ -26,7 +26,7 @@ class Project:
         from el_analysis.core.location import Location
         self.name = name
         self.locations: List[Location] = []  # List of location names associated with the project
-        self.default_location = Location("default",default_location)
+        self.default_location = Location(default_location,default_location)
         self.locations.append(self.default_location)    
 
     def get_location_by_name(self, location_name: str, create_if_not_exists: bool = False) -> Location:
@@ -119,17 +119,12 @@ class Project:
         """
         print(f"Project Summary for {self.name}:")
         print(f"Total Devices: {len(self.devices)}")
-        
-        location_counts = {}
-        for device in self.devices:
-            loc = device.location if hasattr(device, 'location') else None
-            if loc:
-                location_counts[loc] = location_counts.get(loc, 0) + 1
-            else:
-                location_counts["<no location>"] = location_counts.get("<no location>", 0) + 1
-        
-        for loc, count in location_counts.items():
-            print(f"Location: {loc}, Devices: {count}")
+
+        for loc in self.locations:
+            print(f"Location: {loc.name}, Devices: {len(loc.devices)}")
+            for device in loc.devices:
+                interfaces = device.interfaces
+                print(f"\t{device.name} : {','.join([i.name for i in interfaces])}")
 
     def __repr__(self):
         # Count devices per location

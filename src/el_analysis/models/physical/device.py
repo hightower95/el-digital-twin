@@ -47,6 +47,7 @@ class Device:
     @property
     def location(self) -> Optional[Location]:
         """Returns the location of the device, if available."""
+        from el_analysis.core.location import Location
         if self.parent and isinstance(self.parent, Location):
             return self.parent
         return None
@@ -58,7 +59,8 @@ class Device:
     def add_interface(self, interface_name: str, connector: Optional[Connector] = None) -> Interface:
         """Add an interface to the device.
         @param interface_name: The name of the interface to add.
-        
+        @param connector: An optional Connector object to associate with the interface.
+        @return: The Interface object that was added.
         Raises ValueError if the interface already exists and config.ErrorOnDuplicateInterface is True.
         """
         
@@ -71,7 +73,7 @@ class Device:
         if interface_name in self._interfaces:
             interface_obj = self._interfaces[interface_name]
         else:
-            interface_obj = self._make_interface(interface_name)
+            interface_obj = self._make_interface(interface_name, connector=connector)
 
         self._interfaces[interface_name] = interface_obj
         logging.debug(f"Adding interface {interface_name} to device {self.name}")

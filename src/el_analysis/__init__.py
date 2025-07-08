@@ -15,4 +15,4 @@ from el_analysis.models import Device, Interface#, Interface, Connector, Pin
 # summarize_config(do_print=True)  # Print the configuration summary at module load
 
 
-from el_analysis.connector_toolkit.utils import (get_connector_from_part_number,)
+from el_analysis.connector_toolkit.utils import get_connector_from_part_number
