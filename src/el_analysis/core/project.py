@@ -5,9 +5,10 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from el_analysis.models.physical.device import Device
+    from el_analysis.models.physical.interface import Interface
     from el_analysis.core.location import Location
     from el_analysis import Address
-    from typing import List, Optional
+    from typing import List, Optional, Union
 
     
 from el_analysis import config, logging
@@ -52,7 +53,7 @@ class Project:
             return new_location
         raise ValueError(f"Location {location_name} not found in project {self.name}")
 
-    def get_device_by_address(self, address: Address, create_if_not_exists: bool = False) -> Optional[Device]:
+    def get_device_by_address(self, address: Address, create_if_not_exists: bool = False) -> Optional[Union[Device, Interface]]:
         """
         Retrieves a device by its address.
         
@@ -78,6 +79,14 @@ class Project:
         if device is not None:
             if address.is_interface:
                 # If the address is an interface, we need to ensure the device is created
+                if address.interface is None:
+                    logging.error(f"Address {address} does not specify an interface but is an interface address, returning device {device.name} without interface.")
+                    return None
+                
+                else:
+                    return device.get_interface(address.interface)
+
+                
                 if not device.get_interface(address.interface):
                     return None
                 

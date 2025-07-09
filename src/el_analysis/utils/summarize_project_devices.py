@@ -58,8 +58,14 @@ def _build_data_rows(project: Project):
             if index is None:
                 raise ValueError(f"Interface {interface.name} not found in header mapping.")
 
-            data_row[index + 1] = interface.connector.part_number if interface.connector else "N/A"
-            data_row[index + 2] = interface.connector.part_type if interface.connector else "N/A"
+            data_row[index + 1] = "N/A"
+            data_row[index + 2] = "N/A"
+            if interface.connector is not None:
+                if interface.connector.part_number:
+                    data_row[index + 1] = interface.connector.part_number
+
+                if interface.connector.part_type:
+                    data_row[index + 2] = interface.connector.part_type
             # data_row[index + 5] = interface.address.interface.device.name if interface.address and interface.address.interface else "N/A"
         # 
         all_data_rows.append(data_row)

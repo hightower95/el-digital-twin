@@ -41,7 +41,7 @@ def _build_data_rows(project: Project) -> Tuple[List[str], List[List[str]]]:
     for interface in interfaces_with_connectors:
         row = [
             str(interface.address) if interface.address else "N/A",
-            interface.device.name,
+            interface.device.name if interface.device else "N/A",
             interface.connector.part_number if interface.connector else "N/A",
             interface.connector.part_type if interface.connector else "N/A",
             f"{interface.connected_to.address}" if interface.connected_to else "N/A"
