@@ -29,7 +29,7 @@ for line in file_data.splitlines():
         print("Could not create device for address:", address_str)
         continue
 
-    if new_device.is_cable:
+    if new_device.is_cable: #type:ignore
         # The library guesses if the device is a cable based on the address.
         # Sometimes we want to override this, so we can set the device as a cable explicitly.
         # new_device.is_cable = True
@@ -40,7 +40,7 @@ for line in file_data.splitlines():
     # The library handles creating a connector object with the correct part number / part type / aliases
     if address.is_interface and address.interface is not None:
         connector = get_connector_from_part_number(part_number)
-        interface = new_device.add_interface(address.interface, connector=connector)
+        interface = new_device.add_interface(address.interface, connector=connector) #type:ignore
 
         if interface is None:
             print("Could not create interface for address:", address_str)

@@ -11,6 +11,7 @@ if TYPE_CHECKING:
 
 from typing import Optional, Any, List
 from el_analysis import logging
+from tabulate import tabulate
 
 class Device:
     def __init__(self, name: str, parent: Optional[Any]=None, long_name: Optional[str] = None):
@@ -65,6 +66,7 @@ class Device:
         """
         
         from el_analysis import config, logging
+    
 
         if not interface_name:
             logging.error(f"Attempted to add an interface with an empty name to device {self.name}")
@@ -112,3 +114,43 @@ class Device:
     def __repr__(self):
         return (f"Device(name={self.name!r}, address={self.address!r}, "
                 f"long_name={self.long_name!r}, interfaces={list(self._interfaces.keys())})")
+
+    def print_device_summary(self) -> None:
+        """Return a formatted string summarizing the device and its interfaces."""
+        
+        summary_lines = [f"Device: {self.name} ({self.long_name or 'No description'})", 
+                f"Address: {self.address}"]
+
+        if self.interfaces:
+            # Prepare data for the interface table as a list of dictionaries
+            interface_data = []
+            for interface in self.interfaces:
+                # Create a dictionary with interface properties
+                interface_info = {
+                    "Interface": interface.address.address_string,
+                    "Part Number": interface.part_number,
+                    "Part Type": interface.part_type
+                    # Add more key-value pairs as needed
+                }
+                interface_data.append(interface_info)
+
+            # Extract headers from the first dictionary (assumes all dictionaries have the same keys)
+            if interface_data:
+                headers = list(interface_data[0].keys())
+            
+            # Create the table title
+            table_title = f"\nDevice {self.name}, ({self.address}) has the following interfaces:"
+            summary_lines.append(table_title)
+            
+            # Create a table with the interface data
+            interface_table = tabulate(
+                [list(iface.values()) for iface in interface_data],
+                headers=headers,
+                tablefmt="grid"
+            )
+            summary_lines.append(interface_table)
+        else:
+            summary_lines.append("\nNo interfaces connected")
+
+        print("\n".join(summary_lines))
+

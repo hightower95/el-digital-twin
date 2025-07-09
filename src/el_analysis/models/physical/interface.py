@@ -56,6 +56,10 @@ class Interface:
         return self.connector.part_number if self.connector else None
     
     @property
+    def part_type(self) -> Optional[str]:
+        return self.connector.part_type if self.connector else None
+    
+    @property
     def pins(self) -> List[Pin]:
         """Returns a list of pins associated with this interface."""
         return list(self._pins.values())    
