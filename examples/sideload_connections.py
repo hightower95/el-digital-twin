@@ -68,3 +68,5 @@ for connection in connections:
 # headers, data_rows = project.create_interface_summary()
 
 project.create_connection_summary()
+
+project.create_signal_summary()

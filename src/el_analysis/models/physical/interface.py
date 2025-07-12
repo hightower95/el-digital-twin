@@ -6,6 +6,7 @@ if TYPE_CHECKING:
     from el_analysis.models import Device, Pin
     from el_analysis import Address
     from el_analysis.models.physical.coupling import Coupling
+    from el_analysis.models.logical.signal import Signal
 
 print(f"Loaded {__name__} module successfully.")
 from .connector import Connector
@@ -63,6 +64,11 @@ class Interface(Addressable):
     def pins(self) -> List[Pin]:
         """Returns a list of pins associated with this interface."""
         return list(self._pins.values())    
+    
+    @property
+    def signals(self) -> List[Signal]:
+        """Returns a list of signals associated with this interface."""
+        return [pin.signal for pin in self.pins if pin.signal is not None]
 
     def _make_pin(self, name, *args, **kwargs) -> Pin:
         from el_analysis.models import Pin

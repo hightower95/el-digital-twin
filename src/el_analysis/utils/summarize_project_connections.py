@@ -63,7 +63,7 @@ def _print_table(data_rows: List[ReportDataRow]):
     from tabulate import tabulate
 
     full_table = _report_headers + data_rows
-    print(tabulate(full_table, tablefmt="grid", headers=""))
+    print(tabulate(full_table, tablefmt="grid", headers="")) # type:ignore
 
 
 def get_connection_summary(project: Project) -> str:

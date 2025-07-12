@@ -10,6 +10,7 @@ if TYPE_CHECKING:
     from el_analysis.models.physical.net import Net
     from el_analysis.models.physical.connection import Connection
     from el_analysis.models.physical.addressable import Addressable
+    from el_analysis.models.logical.signal import Signal
     from el_analysis.core.location import Location
     from el_analysis import Address
     from typing import List, Optional, Union
@@ -33,6 +34,7 @@ class Project:
         self.locations: List[Location] = []  # List of location names associated with the project
         self.default_location = Location(default_location,default_location)
         self.locations.append(self.default_location)    
+        self._signals: List[Signal] = []  # List of signals in the project
 
     def get_location_by_name(self, location_name: str, create_if_not_exists: bool = False) -> Location:
         """
@@ -118,6 +120,20 @@ class Project:
         for device in self.devices:
             interfaces.extend(device.interfaces)
         return interfaces
+    
+    @property
+    def signals(self) -> List[Signal]:
+        """
+        Returns a list of all signals in the project.
+        
+        Returns:
+            List[Signal]: A list of signals in the project.
+        """
+        signals = []
+        for device in self.devices:
+            for interface in device.interfaces:
+                signals.extend(interface.signals)
+        return signals
 
     def new_device(self, name: str, location: Optional[Location] = None) -> Device:
         """
@@ -163,6 +179,32 @@ class Project:
         logging.info(f"Created net from {source_pin.name} to {destination_pin.name} with signal '{signal_name}'")
 
         return net
+
+    def get_signal(self, signal_name: str, create_if_not_exists: bool = False) -> Optional[Signal]:
+        """
+        Retrieves a signal by its name.
+        
+        Args:
+            signal_name (str): The name of the signal to retrieve.
+        
+        Returns:
+            Signal: The signal with the specified name, or None if not found.
+        """
+        for signal in self._signals:
+            if signal.name == signal_name:
+                return signal
+            
+        if create_if_not_exists:
+            from el_analysis.models.logical.signal import Signal
+            new_signal = Signal.from_signal_name(signal_name)
+            if new_signal is None:
+                logging.error(f"Failed to create signal '{signal_name}' in project '{self.name}'")
+                return None
+            self._signals.append(new_signal)
+            logging.debug(f"Created new signal '{signal_name}' in project '{self.name}'")
+            return new_signal
+        logging.debug(f"Signal {signal_name} not found in project {self.name}")
+        return None
     
     def create_connection(self, source: Address, destination: Address, signal_name: Optional[str] = None) -> Optional[Connection]:
         """
@@ -184,6 +226,8 @@ class Project:
         destination_device = self.search_by_address(destination, create_if_not_exists=True)
         return_value = None
 
+        signal = self.get_signal(signal_name, create_if_not_exists=True) if signal_name else None
+
         if source.same_location(destination) is False:
             logging.warning(f"Creating a connection between {source} and {destination} - they are not in the same location. This may not be intended, but is allowed")
 
@@ -191,9 +235,9 @@ class Project:
             source_pin = source_device
             destination_pin = destination_device
 
-            logging.info(f"Connected pins {source} to {destination} with signal '{signal_name}'")
+            logging.info(f"Connected pins {source} to {destination} with signal '{signal.name if signal else None}'")
             
-            net = Pin.create_net(source_pin, destination_pin, signal_name=signal_name)
+            net = Pin.create_net(source_pin, destination_pin, signal=signal)
 
             if net is None:
                 logging.error(f"Failed to create net between {source} and {destination}.")
@@ -271,3 +315,7 @@ class Project:
     def create_connection_summary(self):
         from el_analysis.utils.summarize_project_connections import get_connection_summary
         return get_connection_summary(self)
+    
+    def create_signal_summary(self):
+        from el_analysis.utils.summarize_project_signals import get_signal_summary
+        return get_signal_summary(self)
