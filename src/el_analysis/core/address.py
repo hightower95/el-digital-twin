@@ -63,6 +63,31 @@ class Address:
         """Check if the pin part of two addresses matches."""
         return Address.interface_match(first, second) and first.pin == second.pin if first and second else False
     
+    # ==== Comparison Methods ====
+    def same_location(self, other: 'Address') -> bool:
+        """Check if the location part of this address matches the location part of another address."""
+        if not isinstance(other, Address):
+            raise TypeError(f"Cannot compare Address with {type(other)}")        
+        return Address.location_match(self, other)
+
+    def same_product(self, other: 'Address') -> bool:
+        """Check if the product part of this address matches the product part of another address."""
+        if not isinstance(other, Address):
+            raise TypeError(f"Cannot compare Address with {type(other)}")        
+        return Address.product_match(self, other)
+    
+    def same_interface(self, other: 'Address') -> bool:
+        """Check if the interface part of this address matches the interface part of another address."""
+        if not isinstance(other, Address):
+            raise TypeError(f"Cannot compare Address with {type(other)}")        
+        return Address.interface_match(self, other)
+    
+    def same_pin(self, other: 'Address') -> bool:
+        """Check if the pin part of this address matches the pin part of another address."""
+        if not isinstance(other, Address):
+            raise TypeError(f"Cannot compare Address with {type(other)}")        
+        return Address.pin_match(self, other)
+    
     # ==== Address Subsets ====
     # Methods to return subsets of the address
     @property
@@ -101,7 +126,6 @@ class Address:
     
     @property
     def location_address(self) -> 'Address':
-
         return Address.from_tuple(self.as_tuple(length=1))
     
     @property
