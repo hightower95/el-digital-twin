@@ -126,11 +126,34 @@ class Interface(Addressable):
         if not isinstance(interface_a, Interface) or not isinstance(interface_b, Interface):
             raise TypeError("Both arguments must be instances of Interface.")
         
-        interface_a.connected_to = interface_b
-        interface_b.connected_to = interface_a
-        logging.info(f"Connected {interface_a.name} to {interface_b.name}")
+        interface_a.connect_to(interface_b)
+        interface_b.connect_to(interface_a)
 
         return Coupling(interface_a, interface_b)
+    
+    def connect_to(self, other: Interface) -> bool:
+        """Connect this interface to another interface.
+        This method sets the `connected_to` property of this interface to the other interface.
+        @param other: The interface to connect to.
+        """
+        if not isinstance(other, Interface):
+            logging.error(f"Attempted to connect {self.address} to a non-interface object: {other}")
+            raise TypeError("The 'other' parameter must be an instance of Interface.")
+
+        if self.connected_to is not None:
+            if self.connected_to is other:
+                logging.debug(f"In connecting {self.address} to {other.address}, found interfaces are already connected, no action taken.")
+                return True
+            else:
+                logging.error(f"Interface {self.address} is already connected to {self.connected_to.address}, interfaces only support one connection at a time.")
+                raise ValueError(f"Interface {self.address} is already connected to {self.connected_to.address}, interfaces only support one connection at a time.")
+
+        if other.address.same_product(self.address):
+            logging.warning(f"Attempted to connect Interface {self.address} to itself, allowing connection.")
+
+        self.connected_to = other
+        logging.info(f"Connected Interface {self.address} to Interface {other.address}")
+        return True
     
     def search_by_address(self, address: Address, create_if_not_exists: bool = False) -> Optional[Addressable]:
         """

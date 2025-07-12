@@ -65,3 +65,6 @@ connections = read_connections_from_file(filepath)
 for connection in connections:
     connection = project.create_connection(connection.source, connection.destination, signal_name=connection.signal_name)
    
+# headers, data_rows = project.create_interface_summary()
+
+project.create_connection_summary()

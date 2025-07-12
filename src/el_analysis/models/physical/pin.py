@@ -56,9 +56,24 @@ class Pin(Addressable):
             # return self.connection.signal
         return None
     
+    def get_net(self, net_id: str) -> Optional[Net]:
+        """Returns the net with the specified ID if it exists."""
+        for net in self.nets:
+            if net.net_id == net_id:
+                return net
+        return None
+    
     def _attach_net(self, net: 'Net') -> 'Net':
-        if net.net_id in [n.net_id for n in self.nets]:
-            logging.warning(f"Net {net.net_id} is already attached to pin {self.name}.")
+
+        existing_net = self.get_net(net.net_id)
+        if existing_net is not None:
+            # A net with this ID is already attached to this pin
+            if net.signal != existing_net.signal:
+                logging.warning(f"When attaching net {net.net_id} to pin {self.address}, the signal {net.signal} does not match the existing signal {existing_net.signal}."\
+                                " This net is ignored")
+            else:
+                logging.debug(f"Net {net.net_id} is already attached to pin {self.name}, existing signal {existing_net.signal} matches the new signal {net.signal}.")
+            return existing_net
         
         if net.source != self and net.destination != self:
             logging.error(f"Net {net.net_id} does not use {self.name} as source")
@@ -85,7 +100,7 @@ class Pin(Addressable):
         # Create a new Net instance and attach it to both pins, where pin_a is the source and pin_b is the destination.
         net = Net(pin_a, pin_b, signal=None)
         pin_a._attach_net(net)
-        # pin_b._attach_net(net.flipped())
+        pin_b._attach_net(net.flipped())
 
         return net
 

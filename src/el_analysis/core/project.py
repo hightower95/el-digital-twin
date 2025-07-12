@@ -105,6 +105,19 @@ class Project:
         for location in self.locations:
             devices.extend(location.devices)
         return devices
+    
+    @property
+    def interfaces(self) -> List[Interface]:
+        """
+        Returns a list of all interfaces in the project.
+        
+        Returns:
+            List[Interface]: A list of interfaces in the project.
+        """
+        interfaces = []
+        for device in self.devices:
+            interfaces.extend(device.interfaces)
+        return interfaces
 
     def new_device(self, name: str, location: Optional[Location] = None) -> Device:
         """
@@ -143,6 +156,8 @@ class Project:
         if source_pin is None or destination_pin is None:
             logging.error("Source or destination pin is None.")
             return None
+        
+        # if we dont have a destination pin, we can look at source_pin.interface.connected_to 
 
         net = Net(source_pin, destination_pin, signal=None)
         logging.info(f"Created net from {source_pin.name} to {destination_pin.name} with signal '{signal_name}'")
@@ -169,6 +184,9 @@ class Project:
         destination_device = self.search_by_address(destination, create_if_not_exists=True)
         return_value = None
 
+        if source.same_location(destination) is False:
+            logging.warning(f"Creating a connection between {source} and {destination} - they are not in the same location. This may not be intended, but is allowed")
+
         if isinstance(source_device, Pin) and isinstance(destination_device, Pin):        
             source_pin = source_device
             destination_pin = destination_device
@@ -183,13 +201,19 @@ class Project:
             
             return_value = net
 
+            # not net.is_internal means between two devices, e.g. a Cable (CW100) to a Device (A2)
+            # SO we mean, if the net is not internal, we want to register the connection between the interfaces of the devices 
             if not net.is_internal:
                 if source_pin.interface is None or destination_pin.interface is None:
                     logging.error(f"Cannot connect pins {source} and {destination} - one or both pins do not have an interface.")
                     raise ValueError(f"Cannot connect pins {source} and {destination} - one or both pins do not have an interface.")
-                _ = Interface.connect_interfaces(source_pin.interface, destination_pin.interface)
+                coupling = Interface.connect_interfaces(source_pin.interface, destination_pin.interface)
 
         elif isinstance(source_device, Interface) and isinstance(destination_device, Interface):
+            # If we learn that there are two connecting interfaces, we have a small dilemma
+            #    Do we go through every pin on both interfaces and creates nets for them?
+            #    No - because the logic in this library is that if there is a connection between two pins of different interfaces, then there must be a coupling
+
             if signal_name is not None:
                 raise ValueError("Signal name should not be provided for interface connections. Use pin connections instead.")
 
@@ -243,3 +267,7 @@ class Project:
     def create_interface_summary(self):
         from el_analysis.utils.summarise_project_connectors import get_connector_summary
         return get_connector_summary(self)
+    
+    def create_connection_summary(self):
+        from el_analysis.utils.summarize_project_connections import get_connection_summary
+        return get_connection_summary(self)
