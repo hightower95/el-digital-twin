@@ -6,6 +6,10 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from el_analysis.models.physical.device import Device
     from el_analysis.models.physical.interface import Interface
+    from el_analysis.models.physical.pin import Pin
+    from el_analysis.models.physical.net import Net
+    from el_analysis.models.physical.connection import Connection
+    from el_analysis.models.physical.addressable import Addressable
     from el_analysis.core.location import Location
     from el_analysis import Address
     from typing import List, Optional, Union
@@ -23,7 +27,7 @@ class Project:
         name (str): The name of the project.
     """
 
-    def __init__(self, name: str, default_location: str = ""):
+    def __init__(self, name: str, default_location: str = "C"):
         from el_analysis.core.location import Location
         self.name = name
         self.locations: List[Location] = []  # List of location names associated with the project
@@ -43,17 +47,20 @@ class Project:
         Raises:
             ValueError: If no location with the specified name exists in the project.
         """
+        from el_analysis.core.location import Location
         for location in self.locations:
             if location.prefix == location_name:
                 return location
             
+        # If we reach here, the location does not exist
         if create_if_not_exists:
+            logging.debug(f"Creating new location '{location_name}' in project '{self.name}'")
             new_location = Location(location_name)
             self.locations.append(new_location)
             return new_location
         raise ValueError(f"Location {location_name} not found in project {self.name}")
 
-    def get_device_by_address(self, address: Address, create_if_not_exists: bool = False) -> Optional[Union[Device, Interface]]:
+    def search_by_address(self, address: Address, create_if_not_exists: bool = False) -> Optional[Addressable]:
         """
         Retrieves a device by its address.
         
@@ -68,38 +75,23 @@ class Project:
             ValueError: If no device with the specified address exists and create_if_not_exists is False.
         """
         # 1 find location
+        found_device = None
         location_name = address.location if hasattr(address, 'location') else None
         if location_name is not None:
             location = self.get_location_by_name(location_name, create_if_not_exists=create_if_not_exists)
         else:
             location = self.default_location
 
-        device = location.get_device_by_address(address, create_if_not_exists=create_if_not_exists)
+        if address.product is not None:
+            found_device = location.search_by_address(address, create_if_not_exists=create_if_not_exists)
 
-        if device is not None:
-            if address.is_interface:
-                # If the address is an interface, we need to ensure the device is created
-                if address.interface is None:
-                    logging.error(f"Address {address} does not specify an interface but is an interface address, returning device {device.name} without interface.")
-                    return None
-                
-                else:
-                    return device.get_interface(address.interface)
+        # if found_device is not None and address.interface is not None:
+        #     found_device = found_device.search_by_address(address, create_if_not_exists=create_if_not_exists)
 
-                
-                if not device.get_interface(address.interface):
-                    return None
-                
-                else:
-                    # If the device exists, return it
-                    return device.get_interface(address.interface)
-            
-            else:
 
-                return device
-        
-        logging.warning(f"Device with address {address} not found in project {self.name} at location {location_name}")
-        return None
+        if found_device is None:
+            logging.debug(f"Device with address {address} not found in project {self.name} at location {location_name}")
+        return found_device
     
     @property
     def devices(self) -> List[Device]:
@@ -133,7 +125,87 @@ class Project:
         
         new_device = location.new_device(name)        
         return new_device
+
+    def create_net(self, source_pin: Pin, destination_pin: Pin, signal_name: Optional[str] = None) -> Optional[Net]:
+        """
+        Creates a net connection between two devices in the project.
+        
+        Args:
+            source (Device): The source device for the net connection.
+            destination (Device): The destination device for the net connection.
+            signal_name (str, optional): The name of the signal for the net connection. Defaults to None.
+        
+        Returns:
+            Device: The device that was connected, or None if the connection could not be made.
+        """
+        from el_analysis.models.physical.net import Net
+
+        if source_pin is None or destination_pin is None:
+            logging.error("Source or destination pin is None.")
+            return None
+
+        net = Net(source_pin, destination_pin, signal=None)
+        logging.info(f"Created net from {source_pin.name} to {destination_pin.name} with signal '{signal_name}'")
+
+        return net
     
+    def create_connection(self, source: Address, destination: Address, signal_name: Optional[str] = None) -> Optional[Connection]:
+        """
+        Creates a connection between two devices or interfaces in the project.
+        
+        Args:
+            source (Address): The source address of the connection.
+            destination (Address): The destination address of the connection.
+            signal_name (str, optional): The name of the signal for the connection. Defaults to None.
+        
+        Returns:
+            Device or Interface: The device or interface that was connected, or None if the connection could not be made.
+        """
+        from el_analysis.models.physical.pin import Pin
+        from el_analysis.models.physical.interface import Interface
+        from el_analysis.core.address import Address
+        
+        source_device = self.search_by_address(source, create_if_not_exists=True)
+        destination_device = self.search_by_address(destination, create_if_not_exists=True)
+        return_value = None
+
+        if isinstance(source_device, Pin) and isinstance(destination_device, Pin):        
+            source_pin = source_device
+            destination_pin = destination_device
+
+            logging.info(f"Connected pins {source} to {destination} with signal '{signal_name}'")
+            
+            net = Pin.create_net(source_pin, destination_pin, signal_name=signal_name)
+
+            if net is None:
+                logging.error(f"Failed to create net between {source} and {destination}.")
+                raise ValueError(f"Failed to create net between {source} and {destination}.")
+            
+            return_value = net
+
+            if not net.is_internal:
+                if source_pin.interface is None or destination_pin.interface is None:
+                    logging.error(f"Cannot connect pins {source} and {destination} - one or both pins do not have an interface.")
+                    raise ValueError(f"Cannot connect pins {source} and {destination} - one or both pins do not have an interface.")
+                _ = Interface.connect_interfaces(source_pin.interface, destination_pin.interface)
+
+        elif isinstance(source_device, Interface) and isinstance(destination_device, Interface):
+            if signal_name is not None:
+                raise ValueError("Signal name should not be provided for interface connections. Use pin connections instead.")
+
+            logging.info(f"Connected interfaces {source} to {destination}")
+            if Address.product_match(source, destination):
+                logging.warning(f"Connecting interfaces {source} and {destination} from the same product. This may not be intended.")
+
+            return_value = Interface.connect_interfaces(source_device, destination_device)
+        else:
+            logging.error(f"Cannot connect {source} to {destination}: incompatible types.")
+            raise ValueError(f"Cannot connect {source} (type {type(source_device).__name__}) to {destination} (type {type(destination_device).__name__}): incompatible types.")
+
+        return return_value
+
+
+
     def summarize(self):
         """
         Prints a summary of the project, including the number of devices and their locations.

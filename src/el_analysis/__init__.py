@@ -8,7 +8,7 @@ activate_address_logging()
 # from .core import Address
 from el_analysis.core import Address, Project, Location
 
-from el_analysis.models import Device, Interface#, Interface, Connector, Pin
+from el_analysis.models import Device, Interface, Pin#, Interface, Connector, Pin
 
 #, Connector, Interface, Pin
 # from .models import Device

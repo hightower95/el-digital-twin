@@ -3,12 +3,13 @@ from typing import TYPE_CHECKING
 
 print(f"Loaded {__name__} module successfully.")
 if TYPE_CHECKING:
-    from el_analysis.models import Interface, Connection
+    from el_analysis.models import Interface, Connection, Net
     from el_analysis import Address
 
 from dataclasses import dataclass
-from typing import Optional, Any
+from typing import Optional, Any, List
 from el_analysis import logging, config
+from el_analysis.models.physical.addressable import Addressable
 
 
 # @dataclass
@@ -17,25 +18,35 @@ from el_analysis import logging, config
 #     name: str
 
 
-class Pin:
+class Pin(Addressable):
     def __init__(self, name: str, parent: Optional[Interface]=None):
-        self.name = name
+        
         self.parent = parent
         if parent is not None:
             if hasattr(parent, "address"):
-                self.address = parent.address.extend(pin=name)
+                _address = parent.address.extend(pin=name)
             else:
                 raise AttributeError("Parent object does not have an 'address' attribute.")
         else:
-            self.address = Address(pin=name)
+            _address = Address(pin=name)
+
+        super().__init__(address=_address, name=name)
 
         self._connecting_pin = None
         # Connection is to another pin
         self.connection: Optional[Connection] = None
+        self.nets: List[Net] = []  # List of nets this pin is connected to
 
     @property
     def interface(self):
         return self.parent if self.parent else None
+    
+    @property
+    def coupling(self) -> Optional[Any]:
+        """Returns the coupling associated with this pin, if any."""
+        if self.interface is not None and self.interface.coupled_to is not None:
+            return self.interface.coupled_to.get_pin(self.name)
+        return None
     
     @property
     def signal(self) -> Optional[str]:
@@ -45,8 +56,38 @@ class Pin:
             # return self.connection.signal
         return None
     
+    def _attach_net(self, net: 'Net') -> 'Net':
+        if net.net_id in [n.net_id for n in self.nets]:
+            logging.warning(f"Net {net.net_id} is already attached to pin {self.name}.")
         
+        if net.source != self and net.destination != self:
+            logging.error(f"Net {net.net_id} does not use {self.name} as source")
+            raise ValueError(f"Net {net.net_id} does not use {self.name} as source")
+        self.nets.append(net)
+        return net
+
 
     def __repr__(self):
         return (f"Pin(name={self.name!r}, address={self.address!r}, "
                 f"interface={self.interface!r})")
+    
+    @staticmethod
+    def create_net(pin_a: Pin, pin_b: Pin, signal_name: Optional[str] = None) -> Optional[Net]:
+        """
+        Attach a net to two pins.
+        This is used to create a connection between two pins.
+        """
+        from el_analysis.models.physical.net import Net
+        if pin_a is None or pin_b is None:
+            logging.error(f"Failed to attach nets to pins - one or both pins are None. Pin A: {pin_a}, Pin B: {pin_b}")
+            return None
+        
+        # Create a new Net instance and attach it to both pins, where pin_a is the source and pin_b is the destination.
+        net = Net(pin_a, pin_b, signal=None)
+        pin_a._attach_net(net)
+        # pin_b._attach_net(net.flipped())
+
+        return net
+
+
+    

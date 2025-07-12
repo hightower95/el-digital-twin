@@ -11,26 +11,27 @@ if TYPE_CHECKING:
 
 from typing import Optional, Any, List
 from el_analysis import logging
+from el_analysis.models.physical.addressable import Addressable
 from tabulate import tabulate
 
-class Device:
+class Device(Addressable):
     def __init__(self, name: str, parent: Optional[Any]=None, long_name: Optional[str] = None):
         """Initialize a Device with an address, name, and optional long name.
         @param address: The Address object representing the device's address.
         @param name: The name of the device. Example "A2"
         @param long_name: An optional long name for the device. Example "Main Power Supply"""
-        self.name = name
         
         self.parent = parent
         if parent is not None:
             if hasattr(parent, "address"):
-                self.address = parent.address.extend(product=name)
+                _address = parent.address.extend(product=name)
                 # self.address: Address.union(parent.location_address, product=name) = parent.address.extend(product=name)
                 # self.address = parent.address
             else:
                 raise AttributeError("Parent object does not have an 'address' attribute.")
         else:
-            self.address = Address(product=name)
+            _address = Address(product=name)
+        super().__init__(address=_address, name=name)
             
         self.long_name = long_name
         self._interfaces: dict[str, Interface] = {}
@@ -87,6 +88,36 @@ class Device:
         @return: The Interface object if found, otherwise None.
         """
         return self._interfaces.get(interface_name)
+    
+    def search_by_address(self, address: Address, create_if_not_exists: bool = False) -> Optional[Addressable]:
+        """
+        Retrieves a device by its address.
+        
+        Args:
+            address (str): The address of the device.
+            create_if_not_exists (bool): Whether to create the device if it does not exist.
+        
+        Returns:
+            Device: The device with the specified address.
+        """
+        logging.debug(f"Searching for interface by address: {address}, as_tuple: {address.as_tuple()}")
+        
+        if address.interface is None:
+            logging.error(f"Address {address} does not contain an interface name, cannot find device")
+            return None
+        
+        found_device = self.get_interface(address.interface)
+        
+        if create_if_not_exists and found_device is None:
+            found_device = self.add_interface(address.interface)
+
+        if found_device is not None and address.pin is not None:
+            logging.debug(f"Address {address} contains a pin, searching for device by pin address: {address.pin_address}")
+            found_device = found_device.search_by_address(address, create_if_not_exists=True)
+        
+        logging.debug(f"Found device: {found_device} for address: {address}, as_tuple: {address.as_tuple()}")
+
+        return found_device
 
     def remove_interface(self, interface_name: str) -> bool:
         """Remove an interface from the device.
@@ -145,7 +176,8 @@ class Device:
             # Create a table with the interface data
             interface_table = tabulate(
                 [list(iface.values()) for iface in interface_data],
-                headers=headers,
+                headers=headers, # type:ignore
+                showindex="always",  # Show index for each interface
                 tablefmt="grid"
             )
             summary_lines.append(interface_table)

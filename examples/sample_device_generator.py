@@ -345,7 +345,7 @@ for device in devices:
                 from_pin=pin,
                 to_product=interface.connects_to.attached_to.name,
                 to_interface=interface.connects_to.name,
-                to_pin=interface.connects_to.name,
+                to_pin=pin,
                 signal=signal
             ))
 
@@ -361,7 +361,7 @@ for cable in cables:
                 from_pin=pin,
                 to_product=interface.connects_to.attached_to.name,
                 to_interface=interface.connects_to.name,
-                to_pin=interface.connects_to.name,
+                to_pin=pin,
                 signal=signal
             ))
 

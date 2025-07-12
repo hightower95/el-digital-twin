@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from el_analysis.models.physical.device import Device
+    from el_analysis.models.physical.addressable import Addressable
     from el_analysis import Address
     from typing import List, Optional , Dict
 
@@ -38,7 +39,7 @@ class Location:
         """
         return list(self._devices.values())
 
-    def get_device_by_address(self, address: Address, create_if_not_exists: bool = False) -> Optional[Device]:
+    def search_by_address(self, address: Address, create_if_not_exists: bool = False) -> Optional[Addressable]:
         """
         Retrieves a device by its address.
         
@@ -49,20 +50,29 @@ class Location:
         Returns:
             Device: The device with the specified address.
         """
-
-        if address.product in self._devices:
-            return self._devices[address.product]
+        from el_analysis.models.physical.device import Device
+        from el_analysis.models.physical.addressable import Addressable
         
-        if create_if_not_exists:
-            device_name = address.product if address.product is not None else None
-            if device_name is None:
-                logging.error(f"Address {address} does not contain a product name, cannot create device")
-                raise ValueError("Address does not contain a product name")
+        # Todo add or create stack
+        logging.debug(f"Searching for device by address: {address}, as_tuple: {address.as_tuple()}")
 
-            new_device = self.new_device(device_name)
-            return new_device
+        if address.product is None:
+            logging.error(f"Address {address} does not contain a product name, cannot find device")
+            return None
+        
+        found_device = self._devices.get(address.product, None)
+        
+        if create_if_not_exists and found_device is None:
+            found_device = self.new_device(address.product)
+        
+        logging.debug(f"Found device: {found_device} for address: {address}, as_tuple: {address.as_tuple()}")
+        if found_device is not None and address.interface is not None:
+            logging.debug(f"Address {address} contains an interface, searching for device by interface address: {address.interface_address}")
+            found_device = found_device.search_by_address(address, create_if_not_exists=True)
 
-        return None
+        logging.debug(f"Found device: {found_device} for address: {address}, as_tuple: {address.as_tuple()}")
+
+        return found_device
     
     def new_device(self, name: str) -> Device:
         """

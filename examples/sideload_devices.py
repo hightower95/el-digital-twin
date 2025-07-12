@@ -23,7 +23,7 @@ for line in file_data.splitlines():
 
     # We create an "empty" device at the specified address.
     # If the device already exists, it will return the existing device.
-    new_device = project.get_device_by_address(address.product_address, create_if_not_exists=True)
+    new_device = project.search_by_address(address.product_address, create_if_not_exists=True)
 
     if new_device is None:
         print("Could not create device for address:", address_str)

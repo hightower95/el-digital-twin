@@ -40,7 +40,7 @@ def get_products_from_content(content):
     products = []
     for product_address in product_addresses:
         print(f"Product Address: {product_address}")
-        new_device = project.get_device_by_address(product_address, create_if_not_exists=True)
+        new_device = project.search_by_address(product_address, create_if_not_exists=True)
 
         products.append(new_device)
     # products = [project.add_device(product) for product in product_addresses]
@@ -71,7 +71,7 @@ for content_line in content:
 def generate_products(cleaned_content):
     products = []
     for address, part_number in cleaned_content:
-        product = project.get_device_by_address(address, create_if_not_exists=True)
+        product = project.search_by_address(address, create_if_not_exists=True)
         if product:
             products.append(product)
     return products
@@ -82,7 +82,7 @@ def add_interfaces_to_products(cleaned_content):
     for address, part_number in cleaned_content:
         connector = get_connector_from_part_number(part_number)
 
-        product = project.get_device_by_address(address)
+        product = project.search_by_address(address)
         if product:
             new_interface = product.add_interface(address.interface, connector=connector)
 
