@@ -67,6 +67,12 @@ for connection in connections:
    
 # headers, data_rows = project.create_interface_summary()
 
-project.create_connection_summary()
+if __name__ == "__main__":
+    print("Creating connection summary...")
+    project.create_connection_summary()
 
-project.create_signal_summary()
+    print("Creating interface summary...")
+    project.create_interface_summary()
+
+    print("Creating signal summary...")
+    project.create_signal_summary()

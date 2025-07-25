@@ -32,3 +32,13 @@ class Connector:
     
     def get_minified_part_type(self, include_keying: bool = False) -> Optional[str]:
         return Connector.minify_part_type(self.part_type, include_keying) if self.part and self.part_type else None
+    
+    def compatible_with(self, other: Connector) -> bool:
+        """Check if this connector is compatible with another."""
+        return self.part_number == other.part_number and self.part_type == other.part_type
+    
+    def get_part_type(self, minified: bool = False) -> Optional[str]:
+        """Returns the part type, optionally minified."""
+        if minified:
+            return self.get_minified_part_type()
+        return self.part_type

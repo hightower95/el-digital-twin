@@ -34,6 +34,9 @@ class Interface(Addressable):
         self.connector = connector 
         self._pins: dict[str, Pin] = {}  #TODO: Import pins from connector part
         self.connected_to: Optional[Interface] = None  # Reference to another interface this one is connected to
+
+        # self._internal_nets: List['Net'] = []  # List of internal nets associated with this interface
+        # self._channels: List['Channel'] = []  # List of channels associated with this interface
     
     def _validation(self, interface_name):
         if config.Interface.ValidateInterfaceName:
@@ -69,6 +72,14 @@ class Interface(Addressable):
     def signals(self) -> List[Signal]:
         """Returns a list of signals associated with this interface."""
         return [pin.signal for pin in self.pins if pin.signal is not None]
+    
+    @property
+    def coupling(self) -> Optional[Coupling]:
+        """Returns the coupling associated with this interface, if any."""
+        from el_analysis.models.physical.coupling import Coupling
+        if self.connected_to is not None:
+            return Coupling(self, self.connected_to)
+        return None
 
     def _make_pin(self, name, *args, **kwargs) -> Pin:
         from el_analysis.models import Pin

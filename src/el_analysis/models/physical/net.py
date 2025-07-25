@@ -26,6 +26,9 @@ class Net(Connection):
     # other data fields
     # awg: Optional[int] = None
 
+
+
+
     @property
     def is_internal(self) -> bool:
         from el_analysis.core import Address

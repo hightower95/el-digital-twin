@@ -1,0 +1,81 @@
+
+
+
+project
+
+import new_signal
+_ids_used = set()
+def new_signal(name=None)
+    if name is None:
+        new_id = random.randomID()
+        _ids_used.add(new_id)
+
+    else:
+        Signal(name)
+        
+        SignalGroups.try_to_allocate(signal)
+
+def get_signal(name, create_if_not_exists=False):
+
+    signal = self._signals.get(name, None)
+
+    if signal is None and create_if_not_exists:
+
+        signal = new_signal()
+
+    
+
+
+
+def create_connection(self, address_a, address_b, name, source="sideloading"):
+
+    signal = self.get_signal(name, create_if_not_exists = True)
+
+    if pins:
+
+        pin_a.interface.create_net(pin_b.interface, signal, source=source)
+
+        or 
+    
+    get_interface(address_a).create_net(pin_b.interface, signal)
+
+
+Interface
+
+def create_net(destination, signal):
+
+    if is_internal(destination):
+        if net does not exist:
+            add net 
+
+            associate_with_channels(net)
+        self.nets.add( Net
+
+    else:
+        create_coupling(destination.interface)
+
+        
+
+Physical Model has:
+Devices
+Interfaces which have Data Channels
+Pins  which have Data Nets
+
+A Data Channel is a logical grouping of nets
+
+The Logical Model has:
+
+Signal Groups
+Signals
+
+
+They are related:
+
+Data Channels are a Signal Group between two specific interfaces. 
+So we can trace the tree of a Signal Group by following SignalGroup.DataChannels
+
+
+Questions:
+- How do we parse Data Channels when we read in one net at a time
+
+
