@@ -221,6 +221,9 @@ class Project:
         from el_analysis.models.physical.pin import Pin
         from el_analysis.models.physical.interface import Interface
         from el_analysis.core.address import Address
+
+        #Todo: we are going to run nets from interfaces to interface. We do not care about pin to pin connections
+    
         
         source_device = self.search_by_address(source, create_if_not_exists=True)
         destination_device = self.search_by_address(destination, create_if_not_exists=True)
@@ -236,7 +239,7 @@ class Project:
             destination_pin = destination_device
 
             logging.info(f"Connected pins {source} to {destination} with signal '{signal.name if signal else None}'")
-            
+            #Todo - no. We let the interface object handle this
             net = Pin.create_net(source_pin, destination_pin, signal=signal)
 
             if net is None:
