@@ -2,10 +2,15 @@ import el_analysis
 
 from sideload_devices import project
 from dataclasses import dataclass
+import os
 
-
+# Get the directory of the current script
+script_dir = os.path.dirname(os.path.abspath(__file__))
+# Build path to the connections file in the sample_data_simple folder
 connections_file = "sample_connections.txt"
-filepath = "c:/Users/peter/OneDrive/Documents/Coding/bw/toolkit/examples/" + connections_file
+filepath = os.path.join(script_dir, "sample_data_simple", connections_file)
+# connections_file = "sample_connections.txt"
+# filepath = "c:/Users/peter/OneDrive/Documents/Coding/bw/toolkit/examples/" + connections_file
 print(f"Loading connections from file: {filepath}")
 
 @dataclass

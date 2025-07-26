@@ -11,8 +11,15 @@ from el_analysis import Project, Address, get_connector_from_part_number
 project = Project("Project Name", default_location="C")
 
 # Read in our data. In this case we are reading from a file that contains a list of connectors and their part numbers
+import os
+
+# Get the directory of the current script
+script_dir = os.path.dirname(os.path.abspath(__file__))
+# Build path to the connections file in the sample_data_simple folder
+devices_file = "sample_device.txt"
+filepath = os.path.join(script_dir, "sample_data_simple", devices_file)
 file_data = None
-with open("c:/Users/peter/OneDrive/Documents/Coding/bw/toolkit/examples/sample_device.txt", "r") as file:
+with open(filepath, "r") as file:
     file_data = file.read()
 
 for line in file_data.splitlines():

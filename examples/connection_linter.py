@@ -51,6 +51,10 @@ def lint_interface_connection(interface: Interface) -> LintResult:
             message="Interface is not coupled to another interface."
         )
     
+    if not isinstance(connection, Coupling):
+        raise TypeError("Connection must be of type Coupling.")
+    if not isinstance(connection.source, Interface) or not isinstance(connection.destination, Interface):
+        raise TypeError("Both source and destination of the connection must be of type Interface.")
     source_connector = connection.source.connector
     destination_connector = connection.destination.connector
 
@@ -65,7 +69,8 @@ def lint_interface_connection(interface: Interface) -> LintResult:
         return LintResult(
             level=LinterLevels.ERROR,
             source=interface,
-            destination=connection.destination,
+            destination=connection.destination, # type:ignore
+            connection_hash=connection.connection_hash,
             message=f"Connectors {source_connector.part_number} ({source_connector.part_type}) and {destination_connector.part_number} ({destination_connector.part_type}) are not compatible."
         )
 

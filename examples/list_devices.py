@@ -1,8 +1,13 @@
 from el_analysis import Address, Device, Project, get_connector_from_part_number
 import os
 
-input_filename = "sample_device.txt"
-input_filename = os.path.join(os.path.dirname(__file__), "sample_device.txt")
+
+# Get the directory of the current script
+script_dir = os.path.dirname(os.path.abspath(__file__))
+# Build path to the connections file in the sample_data_simple folder
+devices_file = "sample_device.txt"
+input_filename = os.path.join(script_dir, "sample_data_simple", devices_file)
+
 # This input file should contain lines formatted as:
 # "connector_address_string, part_number"
 # Example: "+C.A2.X1, 123-456-789"
