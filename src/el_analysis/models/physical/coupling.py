@@ -23,6 +23,7 @@ class Coupling(Connection):
 
     def get_connection_hash(self, minified: bool = False, ordered: bool = True) -> str:
         """Returns a unique hash for the coupling connection."""
+        from el_analysis.models.physical.interface import Interface
         a = self.source 
         b = self.destination
         if a is None or b is None:
