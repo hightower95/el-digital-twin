@@ -8,6 +8,7 @@ if TYPE_CHECKING:
 from el_analysis import config, logging
 from typing import Dict
 
+
 __connector_cache: Dict[str, Connector] = {}
 
 def get_connector_from_part_number(part_number: str):

@@ -44,7 +44,7 @@ class Coupling(Connection):
         if a.connector is None or b.connector is None:
             raise ValueError("Both source and destination must have connectors for a coupling.")
 
-        return f"{a.connector.get_part_type(minified)}-{b.connector.get_part_type(minified)}"
+        return f"<{a.connector.get_part_type(minified)}::{b.connector.get_part_type(minified)}>"
 
     @property
     def connection_hash(self) -> str:

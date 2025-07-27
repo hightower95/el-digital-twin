@@ -10,8 +10,10 @@ if TYPE_CHECKING:
     from el_analysis.models.physical.net import Net
     from el_analysis.models.physical.connection import Connection
     from el_analysis.models.physical.addressable import Addressable
+    from el_analysis.models.physical.connector import Connector
     from el_analysis.models.logical.signal import Signal
     from el_analysis.core.location import Location
+    from el_analysis.connector_toolkit import ConnectorDBInterface
     from el_analysis import Address
     from typing import List, Optional, Union
 
@@ -28,13 +30,16 @@ class Project:
         name (str): The name of the project.
     """
 
-    def __init__(self, name: str, default_location: str = "C"):
+    def __init__(self, name: str, default_location: str = "C", connectors_database: Optional[ConnectorDBInterface] = None):
         from el_analysis.core.location import Location
         self.name = name
         self.locations: List[Location] = []  # List of location names associated with the project
         self.default_location = Location(default_location,default_location)
         self.locations.append(self.default_location)    
         self._signals: List[Signal] = []  # List of signals in the project
+        self.connectors_database = connectors_database
+        if self.connectors_database is None:
+            logging.warning("No connectors database provided. Some features may not work as expected.")
 
     def get_location_by_name(self, location_name: str, create_if_not_exists: bool = False) -> Location:
         """
@@ -275,6 +280,26 @@ class Project:
 
         return return_value
 
+    def get_connector_from_part_number(self, part_number: str) -> Optional[Connector]:
+        """
+        Retrieves a connector by its part number from the connectors database.
+        
+        Args:
+            part_number (str): The part number of the connector to retrieve.
+        
+        Returns:
+            Connector: The connector with the specified part number, or None if not found.
+        """
+        if self.connectors_database is None:
+            logging.warning("No connectors database provided. Cannot retrieve connector.")
+            return None
+        result = self.connectors_database.get_connector_by_part_number(part_number)
+        if result is None:
+            if part_number is not None:
+                logging.warning(f"Connector with part number {part_number} not found in connector database.")
+        else:
+            logging.debug(f"Retrieving connector with part number {part_number}, got connector: {result}, {result.part_number}, {result.part_type}")
+        return result
 
 
     def summarize(self):
