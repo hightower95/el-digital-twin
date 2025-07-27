@@ -5,6 +5,14 @@ from dataclasses import dataclass, field
 import os
 import re
 
+# Add the parent directory to the Python path to access adjacent modules
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Now we can import from the adjacent folder
+from sample_connector_db.connector_database import ConnectorDatabase, Connector
+from sample_connector_db.connector_part import Variants, Materials, Sizes, Genders
+
+connector_db = ConnectorDatabase()
 
 # Improvements:
 #  1. When picking connector for a cable, use a part number that corresponds to the device connector
@@ -20,7 +28,7 @@ DEFAULT_MAX_SIGNALS = 6
 
 output_filename = "sample_device.txt"
 random.seed(output_filename)
-output_filename = os.path.join(os.path.dirname(__file__), "sample_device.txt")
+output_filename = os.path.join(os.path.dirname(__file__), output_filename)
 
 def generate_part_numbers(condition=None, count=10) -> Set[str]:
     numbers = set()
@@ -53,9 +61,44 @@ def get_opposite_part_number(part_number: str) -> str:
 
     return result
 
+def get_connectors(quantity=5) -> list[Connector]:
+    """Returns a list of all connectors."""
+    if quantity is None or quantity <= 0:
+        return connector_db.connectors
+    
+    connectors_selected = []
+
+    # max loops
+    max_loops = 1000
+
+    while len(connectors_selected) < quantity:
+        if max_loops <= 0:
+            raise ValueError("Could not find enough connectors that are not mateable with existing connectors.")
+        max_loops -= 1
+        # Get a random connector
+        connector = connector_db.get_random_connector()
+        # check connector not in connectors_selected
+        if connector in connectors_selected:
+            continue
+
+        if not connector:
+            continue
+
+        # connector should not be mateable with any existing connector
+        if any(connector.can_connect_to(existing_connector) or connector.minified_part_type == existing_connector.minified_part_type for existing_connector in connectors_selected):
+            continue
+        
+        connectors_selected.append(connector)
+
+    return connectors_selected
+
 # generated_part_numbers = list(generate_part_numbers())
 
-generate_part_numbers_devices = list(generate_part_numbers(condition=lambda x, y: is_even(y), count=5))
+# generate_part_numbers_devices = list(generate_part_numbers(condition=lambda x, y: is_even(y), count=5))
+
+generated_connectors = get_connectors(6)
+# generate_part_numbers_devices = [connector.part_number for connector in generated_connectors]
+
 
 # print(generated_part_numbers)
 
@@ -101,10 +144,14 @@ device_interfaces = {}
 @dataclass
 class Interface:
     name: str
-    part_number: str
+    connector: Connector
     connects_to: Optional['Interface'] = None
     attached_to: Optional[Union['Device', 'Cable']] = None  # Can be a Device or Cable
     pins: dict[str, str] = field(default_factory=dict)  # Pin mapping for signals
+
+    @property
+    def part_number(self):
+        return self.connector.part_number if self.connector else ""
 
     @property
     def address(self):
@@ -166,8 +213,9 @@ for device_name in device_names:
 
     connector_count = random.randint(3, max_connectors)
     for x in range(1, connector_count):
-        chosen_part_number = random.choice(generate_part_numbers_devices)
-        interface = Interface(name=f"X{x}", part_number=chosen_part_number)
+        chosen_connector = random.choice(generated_connectors)
+        # chosen_part_number = random.choice(generate_part_numbers_devices)
+        interface = Interface(name=f"X{x}", connector=chosen_connector)
         interface.attached_to = device
         device.interfaces.append(interface)
     devices.append(device)
@@ -181,8 +229,8 @@ for cable_name in cable_names:
     cable = Cable(name=cable_name, interfaces=[])
     connector_count = random.randint(3, 6)
     for x in range(1, connector_count):
-        chosen_part_number = random.choice(generate_part_numbers_devices)
-        interface = Interface(name=f"X{x}", part_number=chosen_part_number)
+        chosen_connector = random.choice(generated_connectors)
+        interface = Interface(name=f"X{x}", connector=chosen_connector)
         interface.attached_to = cable
         cable.interfaces.append(interface)
     cables.append(cable)
@@ -219,16 +267,23 @@ def connect_devices(devices: list[Device], cables: list[Cable]):
                 cable = random.choice(cable_options)
                 cable_interface = random.choice(cable.get_unconnected_interfaces())
 
-                # Cable is connected to device
+                # We connect the cable to the device
                 cable_interface.connects_to = interface
                 interface.connects_to = cable_interface
-                cable_interface.part_number = get_opposite_part_number(interface.part_number)
+
+                # We need to align the connectors
+                opposite_connector = connector_db.get_opposite_connector(interface.connector)
+                if opposite_connector is None:
+                    print(f"No opposite connector found for {interface.connector.part_type}")
+                    continue
+                cable_interface.connector = opposite_connector
 
                 other_cable_interface = random.choice(cable.get_unconnected_interfaces())
 
                 other_interface.connects_to = other_cable_interface
                 other_cable_interface.connects_to = other_interface
-                other_cable_interface.part_number = get_opposite_part_number(other_interface.part_number)
+                other_cable_interface.connector = opposite_connector
+                # other_cable_interface.part_number = get_opposite_part_number(other_interface.part_number)
 
                 print(f"Connecting {device.name}.{interface.name} to {interface.connects_to.address} -- {other_interface.connects_to.address} to {other_device.name}.{other_interface.name}")
 
@@ -343,8 +398,8 @@ for device in devices:
                 from_product=device.name,
                 from_interface=interface.name,
                 from_pin=pin,
-                to_product=interface.connects_to.attached_to.name,
-                to_interface=interface.connects_to.name,
+                to_product=interface.connects_to.attached_to.name, # type:ignore
+                to_interface=interface.connects_to.name, # type:ignore
                 to_pin=pin,
                 signal=signal
             ))
@@ -359,7 +414,7 @@ for cable in cables:
                 from_product=cable.name,
                 from_interface=interface.name,
                 from_pin=pin,
-                to_product=interface.connects_to.attached_to.name,
+                to_product=interface.connects_to.attached_to.name, # type:ignore
                 to_interface=interface.connects_to.name,
                 to_pin=pin,
                 signal=signal

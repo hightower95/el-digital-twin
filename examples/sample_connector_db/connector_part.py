@@ -55,6 +55,19 @@ class ConnectorPart:
         """Returns a minified part type string."""
         return f"{self.variant.short_name}-_-{self.size.short_name}-{self.gender.short_name}"
     
+    def can_connect_to(self, other: 'ConnectorPart') -> bool:
+        """Checks if this part can connect to another part."""
+        variant_match = self.variant == other.variant
+        size_match = self.size == other.size
+        if self.gender == Genders.MALE.value and other.gender == Genders.FEMALE.value:
+            gender_match = True
+        elif self.gender == Genders.FEMALE.value and other.gender == Genders.MALE.value:
+            gender_match = True
+        else:
+            gender_match = False
+
+        return variant_match and size_match and gender_match
+
     @classmethod
     def from_part_code_string(cls, part_type: str) -> 'ConnectorPart':
         """Initializes the connector part from a string representation."""
@@ -70,6 +83,11 @@ class ConnectorPart:
 
         return cls(variant=variant, material=material, size=size, gender=gender)
     
+    def get_opposite_part(self) -> 'ConnectorPart':
+        """Returns the opposite part type for this connector."""
+        opposite_gender = Genders.FEMALE.value if self.gender == Genders.MALE.value else Genders.MALE.value
+        return ConnectorPart(variant=self.variant, material=self.material, size=self.size, gender=opposite_gender)
+
     def get_compatible_parts(self) -> list['ConnectorPart']:
         """Returns a list of part types that are compatible with this connector."""
         compatible_parts = []
@@ -86,6 +104,14 @@ class ConnectorPart:
             part = ConnectorPart(variant=self.variant, material=material.value, size=self.size, gender=opposite_gender)
             compatible_parts.append(part)
         return compatible_parts
+    
+    def get_adjacent_parts(self) -> list['ConnectorPart']:
+        """Returns a list of adjacent parts that are compatible with this connector."""
+        adjacent_parts = []
+        for material in Materials:
+            part = ConnectorPart(variant=self.variant, material=material.value, size=self.size, gender=self.gender)
+            adjacent_parts.append(part)
+        return adjacent_parts
 
 
 @dataclass
@@ -103,11 +129,19 @@ class Connector:
         """Returns the minified part type."""
         return self.part.minified_part_type()
     
+    def can_connect_to(self, other: 'Connector') -> bool:
+        """Checks if this connector can connect to another connector."""
+        return self.part.can_connect_to(other.part)
+    
     def get_compatible_parts(self) -> list[ConnectorPart]:
         """Returns a list of part types that are compatible with this connector."""
 
         return self.part.get_compatible_parts()
     
+    def get_adjacent_parts(self) -> list[ConnectorPart]:
+        """Returns a list of adjacent parts that are compatible with this connector."""
+        return self.part.get_adjacent_parts()
+
 
 if __name__ == "__main__":
     # Example usage
