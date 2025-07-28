@@ -31,13 +31,36 @@ class Interface(Addressable):
         else:
             _address = Address(interface=name)
         super().__init__(address=_address, name=name)
-        self.connector = connector 
+        self._connector: Optional[Connector] = None
+        self.connector = connector
         self._pins: dict[str, Pin] = {}  #TODO: Import pins from connector part
         self.connected_to: Optional[Interface] = None  # Reference to another interface this one is connected to
 
         # self._internal_nets: List['Net'] = []  # List of internal nets associated with this interface
         # self._channels: List['Channel'] = []  # List of channels associated with this interface
     
+    @property
+    def connector(self) -> Optional[Connector]:
+        """Returns the connector associated with this interface."""
+        return self._connector
+    
+    @connector.setter
+    def connector(self, value: Optional[Connector]):
+        """Sets the connector for this interface."""
+        if value is not None and not isinstance(value, Connector):
+            raise TypeError("Connector must be an instance of Connector class.")
+        
+        if self._connector is None:
+            if value is not None:
+                value.used_in.append(self)
+
+        elif self._connector is not value:
+            self._connector.used_in.remove(self)
+            if value is not None:
+                value.used_in.append(self)
+        
+        self._connector = value
+
     def _validation(self, interface_name):
         if config.Interface.ValidateInterfaceName:
         

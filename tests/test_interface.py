@@ -79,5 +79,40 @@ class TestInterface(unittest.TestCase):
             config.Interface.ValidateInterfaceName = old_validate
             config.Interface.AllowNonStandardInterfaceNames = old_allow
 
+    def test_connector_getter_setter(self):
+        from el_analysis.connector_toolkit.connector import Connector
+                
+        interface = Interface("X1", parent=self._parent)
+        self.assertIsNone(interface.connector)
+        
+        # Create a mock connector
+        class MockConnector(Connector):
+            def __init__(self):
+                super().__init__("test_connector")
+                self.used_in = []
+
+        mock_connector = MockConnector()
+        
+        # Set connector and verify it's set correctly
+        interface.connector = mock_connector
+        self.assertEqual(interface.connector, mock_connector)
+        self.assertIn(interface, mock_connector.used_in)
+        
+        # Replace with a new connector
+        new_mock_connector = MockConnector()
+        interface.connector = new_mock_connector
+        self.assertEqual(interface.connector, new_mock_connector)
+        self.assertNotIn(interface, mock_connector.used_in)
+        self.assertIn(interface, new_mock_connector.used_in)
+        
+        # Set to None
+        interface.connector = None
+        self.assertIsNone(interface.connector)
+        self.assertNotIn(interface, new_mock_connector.used_in)
+        
+        # Test with invalid connector type
+        with self.assertRaises(TypeError):
+            interface.connector = "not_a_connector"
+
 if __name__ == "__main__":
     unittest.main()

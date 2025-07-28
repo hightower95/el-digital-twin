@@ -10,10 +10,10 @@ if TYPE_CHECKING:
     from el_analysis.models.physical.net import Net
     from el_analysis.models.physical.connection import Connection
     from el_analysis.models.physical.addressable import Addressable
-    from el_analysis.models.physical.connector import Connector
     from el_analysis.models.logical.signal import Signal
     from el_analysis.core.location import Location
     from el_analysis.connector_toolkit import ConnectorDBInterface
+    from el_analysis.connector_toolkit.connector import Connector
     from el_analysis import Address
     from typing import List, Optional, Union
 
@@ -126,6 +126,26 @@ class Project:
             interfaces.extend(device.interfaces)
         return interfaces
     
+    @property
+    def connectors(self) -> List[Connector]:
+        """
+        Returns a list of all unique connectors in the project.
+
+        To have the context of where a connector is used, use project.interfaces instead
+
+        Returns:
+            List[Connector]: A list of connectors in the project.
+        """
+        connectors = list()
+        # Iterate through all devices and their interfaces to collect connectors
+        for interface in self.interfaces:
+            if interface.connector:
+                if interface.connector not in connectors:
+                    # Add the connector to the list if it's not already present
+                    # This ensures we only have unique connectors
+                    connectors.append(interface.connector)
+        return connectors
+
     @property
     def signals(self) -> List[Signal]:
         """

@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Any
 from el_analysis.connector_toolkit.specification import Specification as ConnectorSpecification, DefaultSpecification
 
 class Connector:
@@ -11,7 +11,9 @@ class Connector:
             self.component = DefaultSpecification()
         self.component: Optional[ConnectorSpecification] = component
         self.part_number: Optional[str] = part_number
-    
+        # Anyone that uses this connector will be listed here.
+        self.used_in: list[Any] = []
+
     @property
     def part_code(self) -> str:
         """Returns the part code of the connector."""
@@ -21,6 +23,11 @@ class Connector:
     def minified_part_code(self) -> str:
         """Returns the minified part code of the connector."""
         return self.component.get_minified_part_code() if self.component else "<No Minified Part Code>"
+    
+    @property
+    def part_type(self) -> str:
+        """Returns the part type of the connector."""
+        return self.component.SPECIFICATION_NAME if self.component else "<No Part Type>"
     
     def get_minified_part_code(self, include_keying: bool = False) -> str:
         """Returns the minified part code, optionally including keying."""

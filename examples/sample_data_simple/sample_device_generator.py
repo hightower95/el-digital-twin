@@ -101,18 +101,26 @@ def get_connectors(quantity=5) -> list[Connector]:
 
 generated_connectors = get_connectors(6)
 # generate_part_numbers_devices = [connector.part_number for connector in generated_connectors]
-def get_random_connector(connectors, chance_of_material_change=0.5) -> Connector:
+def get_random_connector(connectors, chance_of_material_change=0.7) -> Connector:
     """Returns a random connector from the list of connectors."""
     # TODO TODO TODO
     connector = random.choice(connectors)
+    material = connector.component.values.get("material")
     if random.random() < chance_of_material_change:
+        choices = connector_db.find_adjacent_connectors(connector)
+
         # Change the material of the connector
-        choices = connector.component.aspects["material"].get_options()
-        current_material = connector.component.values["material"]
+        # choices = connector.component.aspects["material"].get_options()
+        # current_material = connector.component.values["material"]
         # choices.remove(connector.component.values["material"])  # Remove current material to avoid no change
-        new_material = random.choice(choices)
-        connector.material = new_material
-        print("Changed material of connector to", new_material, "from", current_material)
+        # new_material = random.choice(choices)
+        
+        connector = random.choice(choices)
+        if connector.component is None:
+            print(f"Warning: Connector {connector.part_code} has no component specification.")
+            return connector
+        new_material = connector.component.values.get("material", "Unknown")
+        print("Changed material of connector to", new_material, "from", material)
     return connector
 
 # print(generated_part_numbers)

@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 print(f"Loaded {__name__} module successfully.")
 if TYPE_CHECKING:
     from el_analysis.models import Interface
-    from el_analysis.models.physical.connector import Connector
+    from el_analysis.connector_toolkit.connector import Connector
     from el_analysis import Address, config, Location
 
 from typing import Optional, Any, List
