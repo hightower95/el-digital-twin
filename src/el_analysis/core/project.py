@@ -298,7 +298,7 @@ class Project:
             if part_number is not None:
                 logging.warning(f"Connector with part number {part_number} not found in connector database.")
         else:
-            logging.debug(f"Retrieving connector with part number {part_number}, got connector: {result}, {result.part_number}, {result.part_type}")
+            logging.debug(f"Retrieving connector with part number {part_number}, got connector: {result}, {result.part_number}, {result.part_code}")
         return result
 
 

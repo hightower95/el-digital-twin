@@ -4,9 +4,7 @@ from el_analysis import Project, Address#, get_connector_from_part_number
 
 # Sideloading is when we manually add devices and connections to a project without using the built-in loading methods.
 
-
-
-from examples.custom_connector_db_interface import database_interface
+from custom_connector_db_interface import database_interface
 
 # Create the project instance
 project = Project("Project Name", default_location="C", connectors_database=database_interface)

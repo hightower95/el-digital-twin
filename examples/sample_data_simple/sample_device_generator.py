@@ -9,10 +9,13 @@ import re
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # Now we can import from the adjacent folder
-from sample_connector_db.connector_database import ConnectorDatabase, Connector
+from sample_connector_db.connector_database import ConnectorDatabase
 from sample_connector_db.connector_part import Variants, Materials, Sizes, Genders
+from custom_connector_db_interface import CustomSpecification
+from el_analysis.connector_toolkit.connector import Connector
 
 connector_db = ConnectorDatabase()
+connector_db.add_connector_deserialization_handler(CustomSpecification)
 
 # Improvements:
 #  1. When picking connector for a cable, use a part number that corresponds to the device connector
@@ -81,11 +84,11 @@ def get_connectors(quantity=5) -> list[Connector]:
         if connector in connectors_selected:
             continue
 
-        if not connector:
+        if not connector or not connector.component:
             continue
 
         # connector should not be mateable with any existing connector
-        if any(connector.can_connect_to(existing_connector) or connector.minified_part_type == existing_connector.minified_part_type for existing_connector in connectors_selected):
+        if any(connector.component.can_connect_to(existing_connector) or connector.minified_part_code == existing_connector.minified_part_code for existing_connector in connectors_selected):
             continue
         
         connectors_selected.append(connector)
@@ -98,7 +101,19 @@ def get_connectors(quantity=5) -> list[Connector]:
 
 generated_connectors = get_connectors(6)
 # generate_part_numbers_devices = [connector.part_number for connector in generated_connectors]
-
+def get_random_connector(connectors, chance_of_material_change=0.5) -> Connector:
+    """Returns a random connector from the list of connectors."""
+    # TODO TODO TODO
+    connector = random.choice(connectors)
+    if random.random() < chance_of_material_change:
+        # Change the material of the connector
+        choices = connector.component.aspects["material"].get_options()
+        current_material = connector.component.values["material"]
+        # choices.remove(connector.component.values["material"])  # Remove current material to avoid no change
+        new_material = random.choice(choices)
+        connector.material = new_material
+        print("Changed material of connector to", new_material, "from", current_material)
+    return connector
 
 # print(generated_part_numbers)
 
@@ -213,7 +228,7 @@ for device_name in device_names:
 
     connector_count = random.randint(3, max_connectors)
     for x in range(1, connector_count):
-        chosen_connector = random.choice(generated_connectors)
+        chosen_connector = get_random_connector(generated_connectors)
         # chosen_part_number = random.choice(generate_part_numbers_devices)
         interface = Interface(name=f"X{x}", connector=chosen_connector)
         interface.attached_to = device
@@ -229,7 +244,7 @@ for cable_name in cable_names:
     cable = Cable(name=cable_name, interfaces=[])
     connector_count = random.randint(3, 6)
     for x in range(1, connector_count):
-        chosen_connector = random.choice(generated_connectors)
+        chosen_connector = get_random_connector(generated_connectors)
         interface = Interface(name=f"X{x}", connector=chosen_connector)
         interface.attached_to = cable
         cable.interfaces.append(interface)
@@ -274,7 +289,7 @@ def connect_devices(devices: list[Device], cables: list[Cable]):
                 # We need to align the connectors
                 opposite_connector = connector_db.get_opposite_connector(interface.connector)
                 if opposite_connector is None:
-                    print(f"No opposite connector found for {interface.connector.part_type}")
+                    print(f"No opposite connector found for {interface.connector.part_code}")
                     continue
                 cable_interface.connector = opposite_connector
 
