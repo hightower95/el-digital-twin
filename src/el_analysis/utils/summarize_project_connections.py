@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional
 if TYPE_CHECKING:
     from el_analysis.core import Project
     from el_analysis.models.physical.interface import Interface
-    from el_analysis.models.physical.connector import Connector
+    from el_analysis.connector_toolkit.connector import Connector
     from el_analysis import Address
 
 from dataclasses import dataclass
@@ -40,14 +40,14 @@ def _build_data(interfaces):
         row = [
             interface.address.address_string,
             interface.connector.part_number if interface.connector else None,
-            interface.connector.part_type if interface.connector else None,
+            interface.connector.part_code if interface.connector else None,
             "N/A", # Placeholder for signal count
         ]
         if connected_interfaces:
             row.extend([
                 connected_interfaces.address.address_string,
                 connected_interfaces.connector.part_number,
-                connected_interfaces.connector.part_type,
+                connected_interfaces.connector.part_code,
                 "N/A",  # Placeholder for signal count
             ])
         else:

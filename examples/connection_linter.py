@@ -64,20 +64,21 @@ def lint_interface_connection(interface: Interface) -> LintResult:
             source=interface,
             message="One or both connectors in the connection are not defined."
         )
-    
+
     if not source_connector.compatible_with(destination_connector):
         return LintResult(
             level=LinterLevels.ERROR,
             source=interface,
             destination=connection.destination, # type:ignore
             connection_hash=connection.connection_hash,
-            message=f"Connectors {source_connector.part_number} ({source_connector.part_type}) and {destination_connector.part_number} ({destination_connector.part_type}) are not compatible."
+            message=f"Connectors {source_connector.part_number} ({source_connector.part_code}) and {destination_connector.part_code} ({destination_connector.part_type}) are not compatible."
         )
+    
 
     return LintResult(
         level=LinterLevels.INFO,
         source=interface,
-        message="Interface linted successfully."
+        message=f"Interface linted successfully. Connector {source_connector.part_number} ({source_connector.part_code}) is compatible with {destination_connector.part_code} ({destination_connector.part_type}).",
     )
 
 

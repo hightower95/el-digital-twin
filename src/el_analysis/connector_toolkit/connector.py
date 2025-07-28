@@ -29,6 +29,10 @@ class Connector:
         """Returns the part type of the connector."""
         return self.component.SPECIFICATION_NAME if self.component else "<No Part Type>"
     
+    def compatible_with(self, other: 'Connector') -> bool:
+        """Checks if this connector is compatible with another connector."""
+        return self.component.can_connect_to(other.component) if self.component and other.component else False
+
     def get_minified_part_code(self, include_keying: bool = False) -> str:
         """Returns the minified part code, optionally including keying."""
         return self.component.get_minified_part_code(include_keying) if self.component else "<No Minified Part Code>"

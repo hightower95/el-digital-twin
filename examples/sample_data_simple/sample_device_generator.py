@@ -25,6 +25,7 @@ connector_db.add_connector_deserialization_handler(CustomSpecification)
 CHANCE_REUSE_SIGNAL = 0.3
 CHANCE_GENERATE_SIGNAL_GROUP = 0.1
 CHANCE_GENERATE_SIGNAL_PAIR = 0.4
+CONNECTION_ERROR_CHANCE = 0
 
 CHANCE_FAIL_COPY_ACROSS_SIGNALS = 0.5
 DEFAULT_MAX_SIGNALS = 6
@@ -120,7 +121,7 @@ def get_random_connector(connectors, chance_of_material_change=0.7) -> Connector
             print(f"Warning: Connector {connector.part_code} has no component specification.")
             return connector
         new_material = connector.component.values.get("material", "Unknown")
-        print("Changed material of connector to", new_material, "from", material)
+        # print("Changed material of connector to", new_material, "from", material)
     return connector
 
 # print(generated_part_numbers)
@@ -228,6 +229,7 @@ class Device:
         return len(self.get_unconnected_interfaces())
 devices: list[Device] = []
 
+
 # Generate devices and cables with interfaces
 print("Generating devices and cables with interfaces...")
 
@@ -239,9 +241,14 @@ for device_name in device_names:
         chosen_connector = get_random_connector(generated_connectors)
         # chosen_part_number = random.choice(generate_part_numbers_devices)
         interface = Interface(name=f"X{x}", connector=chosen_connector)
+        print(f"Adding interface {interface.name} to device {device.name} with connector {interface.connector.part_code}")
         interface.attached_to = device
         device.interfaces.append(interface)
     devices.append(device)
+
+print(f"Generated devices and interfaces:")
+for device in devices:
+    print(f"\tDevice {device.name} has {len(device.interfaces)} interfaces: {', '.join([interface.connector.part_code for interface in device.interfaces])}")
 
 print(f"Generated {len(devices)} devices with interfaces.")
 # summarize devices and interfaces
@@ -295,20 +302,30 @@ def connect_devices(devices: list[Device], cables: list[Cable]):
                 interface.connects_to = cable_interface
 
                 # We need to align the connectors
+
+                # Interface in focus "home interface"
                 opposite_connector = connector_db.get_opposite_connector(interface.connector)
                 if opposite_connector is None:
                     print(f"No opposite connector found for {interface.connector.part_code}")
                     continue
                 cable_interface.connector = opposite_connector
 
+                # And the "destination interface"
                 other_cable_interface = random.choice(cable.get_unconnected_interfaces())
-
                 other_interface.connects_to = other_cable_interface
                 other_cable_interface.connects_to = other_interface
-                other_cable_interface.connector = opposite_connector
+
+                if random.random() < CONNECTION_ERROR_CHANCE:  # 50% chance to use the opposite connector
+                    pass
+                else:
+                    opposite_connector = connector_db.get_opposite_connector(other_interface.connector)
+                    if opposite_connector is not None:
+                        other_cable_interface.connector = opposite_connector
+
+                # other_cable_interface.connector = opposite_connector
                 # other_cable_interface.part_number = get_opposite_part_number(other_interface.part_number)
 
-                print(f"Connecting {device.name}.{interface.name} to {interface.connects_to.address} -- {other_interface.connects_to.address} to {other_device.name}.{other_interface.name}")
+                print(f"Connecting {device.name}.{interface.name} ({interface.connector.part_code}) to {interface.connects_to.address} -- {other_interface.connects_to.address} to {other_device.name}.{other_interface.name} ({other_interface.connector.part_code}) via cable {cable.name}.{cable_interface.name} ({cable_interface.connector.part_code}) and {other_cable_interface.name} ({other_cable_interface.connector.part_code})")
 
 connect_devices(devices, cables)
 
