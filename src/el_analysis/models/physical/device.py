@@ -160,7 +160,7 @@ class Device(Addressable):
                 interface_info = {
                     "Interface": interface.address.address_string,
                     "Part Number": interface.part_number,
-                    "Part Type": interface.part_type
+                    "Part Type": interface.part_code
                     # Add more key-value pairs as needed
                 }
                 interface_data.append(interface_info)

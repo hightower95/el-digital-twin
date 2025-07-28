@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from el_analysis.models.logical.signal import Signal
 
 print(f"Loaded {__name__} module successfully.")
-from .connector import Connector
+from el_analysis.connector_toolkit.connector import Connector
 from typing import Optional, Any, List
 from el_analysis import logging, config
 from el_analysis.models.physical.addressable import Addressable
@@ -60,8 +60,8 @@ class Interface(Addressable):
         return self.connector.part_number if self.connector else None
     
     @property
-    def part_type(self) -> Optional[str]:
-        return self.connector.part_type if self.connector else None
+    def part_code(self) -> Optional[str]:
+        return self.connector.part_code if self.connector else None
     
     @property
     def pins(self) -> List[Pin]:
@@ -110,9 +110,9 @@ class Interface(Addressable):
 
    
     
-    def get_minified_part_type(self, include_keying: bool = False) -> Optional[str]:
-        return self.connector.get_minified_part_type(include_keying) if self.connector else None
-    
+    def get_minified_part_code(self, include_keying: bool = False) -> Optional[str]:
+        return self.connector.get_minified_part_code(include_keying) if self.connector else None
+
     @staticmethod
     def is_standard_name(name: str) -> bool:
         """Check if the interface name is a standard name.
