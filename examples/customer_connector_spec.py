@@ -3,7 +3,18 @@ from el_analysis.connector_toolkit.specification import Specification
 from el_analysis.connector_toolkit.property import PropertyValue, ConnectorProperty
 from typing import Dict, Optional
 
+"""CustomSpecification is a specification for a custom connector type.
+
+We want to be able to define a custom connector type that can be used in the toolkit. - maybe a D38999 Mark 5?
+
+In theory this should be handled by the ConnectorToolkit library, but this demonstrates how to do it if needed
+
+The specification is to be used in conjuction with the connector database - see connector_database.py for an example of how to use it.
+
+"""
+
 class CustomSpecification(Specification):
+    SPECIFICATION_NAME = "CustomSpecification"
 
     class Variants(ConnectorProperty):
         STANDARD = PropertyValue("Standard", "1")
@@ -26,16 +37,12 @@ class CustomSpecification(Specification):
         FEMALE = PropertyValue("Female", "F")
     GENDERS = Genders
 
-    """
-    Specification for D38999 connectors.
-    This class can be extended to define specific aspects of the D38999 connector.
-    """
     def __init__(self, 
                  variant: PropertyValue, 
                  material: PropertyValue,
                  size: PropertyValue,
                  gender: PropertyValue):
-        super().__init__("CustomSpecification")
+        super().__init__(CustomSpecification.SPECIFICATION_NAME)
         self.variant: PropertyValue = variant
         self.material: PropertyValue = material
         self.size: PropertyValue = size

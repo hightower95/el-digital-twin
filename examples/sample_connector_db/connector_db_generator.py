@@ -1,8 +1,8 @@
 
-from connector_part import ConnectorPart, Connector, Variants, Materials, Sizes, Genders
+from connector_part import DBConnectorPart, Connector, Variants, Materials, Sizes, Genders
 import os
 
-def generate_part_number(part: ConnectorPart) -> str:
+def generate_part_number(part: DBConnectorPart) -> str:
     """Generates a part number for the given connector part. We use details from the part type to create a unique part number"""
 
     # First two numbers are decided by the material
@@ -26,7 +26,7 @@ def generate_random_connector() -> Connector:
     material = random.choice(list(Materials)).value
     size = random.choice(list(Sizes)).value
     gender = random.choice(list(Genders)).value
-    part = ConnectorPart(variant=variant, material=material, size=size, gender=gender)
+    part = DBConnectorPart(variant=variant, material=material, size=size, gender=gender)
     part_number = generate_part_number(part)
     return Connector(part=part, part_number=part_number)
 
@@ -39,7 +39,7 @@ def generate_all_permutations() -> list[Connector]:
         for material in Materials:
             for size in Sizes:
                 for gender in Genders:
-                    part = ConnectorPart(variant=variant.value, material=material.value, size=size.value, gender=gender.value)
+                    part = DBConnectorPart(variant=variant.value, material=material.value, size=size.value, gender=gender.value)
                     part_number = generate_part_number(part)
                     connectors.append(Connector(part=part, part_number=part_number))
     return connectors

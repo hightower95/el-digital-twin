@@ -41,7 +41,7 @@ class Genders(enum):
 GENDER_OPTIONS = extract_options_from_enum(Genders)
 
 @dataclass
-class ConnectorPart:
+class DBConnectorPart:
     variant: ConnectorComponent
     material: ConnectorComponent
     size: ConnectorComponent
@@ -55,7 +55,7 @@ class ConnectorPart:
         """Returns a minified part type string."""
         return f"{self.variant.short_name}-_-{self.size.short_name}-{self.gender.short_name}"
     
-    def can_connect_to(self, other: 'ConnectorPart') -> bool:
+    def can_connect_to(self, other: 'DBConnectorPart') -> bool:
         """Checks if this part can connect to another part."""
         variant_match = self.variant == other.variant
         size_match = self.size == other.size
@@ -69,7 +69,7 @@ class ConnectorPart:
         return variant_match and size_match and gender_match
 
     @classmethod
-    def from_part_code_string(cls, part_type: str) -> 'ConnectorPart':
+    def from_part_code_string(cls, part_type: str) -> 'DBConnectorPart':
         """Initializes the connector part from a string representation."""
         parts = part_type.split('-')
         # print(f"Parsing part type: {part_type}, got parts: {parts}")
@@ -83,12 +83,12 @@ class ConnectorPart:
 
         return cls(variant=variant, material=material, size=size, gender=gender)
     
-    def get_opposite_part(self) -> 'ConnectorPart':
+    def get_opposite_part(self) -> 'DBConnectorPart':
         """Returns the opposite part type for this connector."""
         opposite_gender = Genders.FEMALE.value if self.gender == Genders.MALE.value else Genders.MALE.value
-        return ConnectorPart(variant=self.variant, material=self.material, size=self.size, gender=opposite_gender)
+        return DBConnectorPart(variant=self.variant, material=self.material, size=self.size, gender=opposite_gender)
 
-    def get_compatible_parts(self) -> list['ConnectorPart']:
+    def get_compatible_parts(self) -> list['DBConnectorPart']:
         """Returns a list of part types that are compatible with this connector."""
         compatible_parts = []
         opposite_gender = self.gender
@@ -101,51 +101,51 @@ class ConnectorPart:
             raise ValueError(f"Unsupported gender: {self.gender}")
 
         for material in Materials:
-            part = ConnectorPart(variant=self.variant, material=material.value, size=self.size, gender=opposite_gender)
+            part = DBConnectorPart(variant=self.variant, material=material.value, size=self.size, gender=opposite_gender)
             compatible_parts.append(part)
         return compatible_parts
     
-    def get_adjacent_parts(self) -> list['ConnectorPart']:
+    def get_adjacent_parts(self) -> list['DBConnectorPart']:
         """Returns a list of adjacent parts that are compatible with this connector."""
         adjacent_parts = []
         for material in Materials:
-            part = ConnectorPart(variant=self.variant, material=material.value, size=self.size, gender=self.gender)
+            part = DBConnectorPart(variant=self.variant, material=material.value, size=self.size, gender=self.gender)
             adjacent_parts.append(part)
         return adjacent_parts
 
 
 @dataclass
-class Connector:
-    part: ConnectorPart
+class DBConnector:
+    part_code: str
     part_number: str = field(default="")
 
-    @property
-    def part_type(self) -> str:
-        """Returns the part type as a string."""
-        return self.part.as_string()
+    # @property
+    # def part_type(self) -> str:
+    #     """Returns the part type as a string."""
+    #     return self.part.as_string()
     
-    @property
-    def minified_part_type(self) -> str:
-        """Returns the minified part type."""
-        return self.part.minified_part_type()
+    # @property
+    # def minified_part_type(self) -> str:
+    #     """Returns the minified part type."""
+    #     return self.part.minified_part_type()
     
-    def can_connect_to(self, other: 'Connector') -> bool:
-        """Checks if this connector can connect to another connector."""
-        return self.part.can_connect_to(other.part)
+    # def can_connect_to(self, other: 'Connector') -> bool:
+    #     """Checks if this connector can connect to another connector."""
+    #     return self.part.can_connect_to(other.part)
     
-    def get_compatible_parts(self) -> list[ConnectorPart]:
-        """Returns a list of part types that are compatible with this connector."""
+    # def get_compatible_parts(self) -> list[DBConnectorPart]:
+    #     """Returns a list of part types that are compatible with this connector."""
 
-        return self.part.get_compatible_parts()
+    #     return self.part.get_compatible_parts()
     
-    def get_adjacent_parts(self) -> list[ConnectorPart]:
-        """Returns a list of adjacent parts that are compatible with this connector."""
-        return self.part.get_adjacent_parts()
+    # def get_adjacent_parts(self) -> list[DBConnectorPart]:
+    #     """Returns a list of adjacent parts that are compatible with this connector."""
+    #     return self.part.get_adjacent_parts()
 
 
 if __name__ == "__main__":
     # Example usage
-    part = ConnectorPart(variant=Variants.STANDARD.value, material=Materials.ZINC.value, size=Sizes.SMALL.value, gender=Genders.MALE.value)
+    part = DBConnectorPart(variant=Variants.STANDARD.value, material=Materials.ZINC.value, size=Sizes.SMALL.value, gender=Genders.MALE.value)
     print(f"Created part: {part.as_string()}")
     opposite_parts = part.get_compatible_parts()
     print(f"Compatible parts for {part.as_string()}:")

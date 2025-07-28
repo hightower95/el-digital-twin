@@ -1,6 +1,5 @@
 from typing import TYPE_CHECKING, Optional
-if TYPE_CHECKING:
-    from el_analysis.connector_toolkit.specification import Specification as ConnectorSpecification, DefaultSpecification
+from el_analysis.connector_toolkit.specification import Specification as ConnectorSpecification, DefaultSpecification
 
 class Connector:
     """Base class for connector variants."""
@@ -22,4 +21,8 @@ class Connector:
     def minified_part_code(self) -> str:
         """Returns the minified part code of the connector."""
         return self.component.get_minified_part_code() if self.component else "<No Minified Part Code>"
+    
+    def __repr__(self) -> str:
+        """Returns a string representation of the connector."""
+        return f"Connector(part_code={self.part_code}, part_number={self.part_number}, specification={self.component.SPECIFICATION_NAME if self.component else 'None'})"
 

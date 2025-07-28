@@ -5,6 +5,7 @@ if TYPE_CHECKING:
 from abc import ABC, abstractmethod
 
 class Specification(ABC):
+    SPECIFICATION_NAME: str = "BaseSpecification"
 
     def __init__(self, specification_name: str):
         self._name = specification_name
