@@ -112,3 +112,4 @@ class CustomConnectorDatabaseInterface(ConnectorDBInterface):
         return self._db_to_connector(opposite_connector)
 
 connector_database = CustomConnectorDatabaseInterface(ConnectorDatabase())
+
