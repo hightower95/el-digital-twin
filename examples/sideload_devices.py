@@ -6,10 +6,10 @@ from el_analysis import Project, Address#, get_connector_from_part_number
 
 
 
-from connector_database import connector_database
+from examples.custom_connector_db_interface import database_interface
 
 # Create the project instance
-project = Project("Project Name", default_location="C", connectors_database=connector_database)
+project = Project("Project Name", default_location="C", connectors_database=database_interface)
 
 # Read in our data. In this case we are reading from a file that contains a list of connectors and their part numbers
 import os

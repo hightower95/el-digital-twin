@@ -3,9 +3,12 @@ from el_analysis.connector_toolkit.specification import Specification
 from el_analysis.connector_toolkit.property import PropertyValue, ConnectorProperty
 from typing import Dict, Optional
 
+
 """CustomSpecification is a specification for a custom connector type.
 
 We want to be able to define a custom connector type that can be used in the toolkit. - maybe a D38999 Mark 5?
+
+A specification is a set of properties that define a connector type. E.g. D38999 is a specification, also VG95234
 
 In theory this should be handled by the ConnectorToolkit library, but this demonstrates how to do it if needed
 
@@ -123,9 +126,41 @@ class CustomSpecification(Specification):
 
         return cls(variant=variant, material=material, size=size, gender=gender)
     
+    def get_opposite(self) -> 'CustomSpecification':
+        opposite_gender = CustomSpecification.Genders.FEMALE.value if self.gender == CustomSpecification.Genders.MALE.value else CustomSpecification.Genders.MALE.value
+        return CustomSpecification(variant=self.variant, material=self.material, size=self.size, gender=opposite_gender)
+
+    def get_compatible(self) -> list[Specification]:
+        """Returns a list of part types that are compatible with this connector."""
+        compatible_parts = []
+        opposite_gender = self.gender
+        if self.gender == CustomSpecification.Genders.MALE.value:
+            opposite_gender = CustomSpecification.Genders.FEMALE.value
+        elif self.gender == CustomSpecification.Genders.FEMALE.value:
+            opposite_gender = CustomSpecification.Genders.MALE.value
+
+        else:
+            raise ValueError(f"Unsupported gender: {self.gender}")
+
+        for material in CustomSpecification.Material:
+            part = CustomSpecification(variant=self.variant, material=material.value, size=self.size, gender=opposite_gender)
+            compatible_parts.append(part)
+        return compatible_parts
+    
+    def get_adjacent(self) -> list[Specification]:
+        """Returns a list of adjacent parts that are compatible with this connector."""
+        adjacent_parts = []
+        for material in CustomSpecification.Material:
+            part = CustomSpecification(variant=self.variant, material=material.value, size=self.size, gender=self.gender)
+            adjacent_parts.append(part)
+        return adjacent_parts
+
 if __name__ == "__main__":
     # Example usage
+    print("")
+    print("Lets use the CustomSpecification class to create a custom connector specification (component).")
     spec = CustomSpecification.from_part_code_string("1-W-S-F")
+    print("Now thats done, lets looking at the values extracted from part code '1-W-S-F':")
 
     # database.add_handler(CustomSpecification)
     print("Can parse part code:", CustomSpecification.can_parse_part_code("1-W-S-F"))
@@ -134,12 +169,13 @@ if __name__ == "__main__":
     print("Part Code:", spec.get_part_code())
     print("Minified Part Code:", spec.get_minified_part_code())
     
-
-    print("Aspects of the specification:")
+    print("")
+    print("Within our specification we embed all properties allowed by our made up standard, now we can look at these")
     for aspect_name, aspect in spec.aspects.items():
-        print(f"Aspect: {aspect_name}, Options: {aspect.get_options()}")
+        print(f"Property: {aspect_name}, Options: {aspect.get_options()}")
 
-    print("Values of the specification aspects:")
+    print("")
+    print("We can also read the values of the properties out to a dictionary")
     print(spec.values)
 
     mating_spec = CustomSpecification.from_part_code_string("1-W-S-M")
@@ -147,3 +183,13 @@ if __name__ == "__main__":
     print("Can connect to mating part:", spec.can_connect_to(mating_spec))
     # Output: {'material': <PropertyValue: Zinc, Z>}
     # Output: {'material': <PropertyValue: Zinc, Z>}
+
+    print("Lets check equality of two specifications:")
+    spec1 = CustomSpecification.from_part_code_string("1-W-S-F")
+    spec2 = CustomSpecification.from_part_code_string("1-W-S-F")
+    spec3 = CustomSpecification.from_part_code_string("1-W-S-M")
+    print("Spec1 == Spec2:", spec1 == spec2)  # Should be True
+    print("Spec1 == Spec3:", spec1 == spec3)  # Should be False
+
+
+    

@@ -7,6 +7,8 @@ from typing import Callable, List, Optional
 from el_analysis.connector_toolkit.connector import Connector
 from el_analysis.connector_toolkit.specification import Specification, DefaultSpecification
 
+
+
 class ConnectorDatabase:
     """
     A class to manage a database of connectors.
@@ -32,11 +34,13 @@ class ConnectorDatabase:
         print(f"Adding handler for specification: {handler.SPECIFICATION_NAME}")
 
         self._deserializers.append(handler)
+        self._load_connectors()
 
     def _load_connectors(self):
         """
         Load connectors from the database file.
         """
+        self.connectors.clear()  # Clear existing connectors
         with open(self.db_path, 'r') as file:
             file.readline()  # Skip header line
             connector_lines = file.readlines()
@@ -122,13 +126,31 @@ class ConnectorDatabase:
         :param connector: The connector to find an opposite for.
         :return: A compatible connector.
         """
-        opposite_part = connector.component.get_opposite_part()
-        opposite_connector = self.get_connector_by_part_code(opposite_part.as_string())
+        if not connector.component:
+            return None
+        opposite_part = connector.component.get_opposite()
+        opposite_connector = self.get_connector_by_part_code(opposite_part.part_code)
         if opposite_connector:
             return opposite_connector
         return None
     
+    def find_opposite_connectors(self, connector: Connector) -> list[Connector]:
+        """
+        Find connectors that are compatible with the given connector.
+        :param connector: The connector to find opposites for.
+        :return: A list of compatible connectors.
+        """
+        return find_opposite_connectors(connector, self)
     
+    def find_adjacent_connectors(self, connector: Connector) -> list[Connector]:
+        """
+        Find connectors that are adjacent to the given connector.
+        :param connector: The connector to find adjacent connectors for.
+        :return: A list of adjacent connectors.
+        """
+        return find_adjacent_connectors(connector, self)
+
+
 def find_opposite_connectors(connector: Connector, connector_db: ConnectorDatabase) -> list[Connector]:
     """
     Find connectors that are compatible with the given connector.
@@ -136,15 +158,19 @@ def find_opposite_connectors(connector: Connector, connector_db: ConnectorDataba
     :param connector_db: The database of connectors to search in.
     :return: A list of compatible connectors.
     """
-    compatible_parts = connector.component.get_compatible_parts()
+    if not connector.component:
+        return []
+    compatible_parts = connector.component.get_compatible()
     opposite_connectors = []
     
     for part in compatible_parts:
-        db_connector = connector_db.get_connector_by_part_code(part.as_string())
+        db_connector = connector_db.get_connector_by_part_code(part.part_code)
         if db_connector:
             opposite_connectors.append(db_connector)
     
     return opposite_connectors
+
+
 
 def find_adjacent_connectors(connector: Connector, connector_db: ConnectorDatabase) -> list[Connector]:
     """
@@ -153,12 +179,13 @@ def find_adjacent_connectors(connector: Connector, connector_db: ConnectorDataba
     :param connector_db: The database of connectors to search in.
     :return: A list of adjacent connectors.
     """
-
-    adjacent_parts = connector.get_adjacent_parts()
+    if not connector.component:
+        return []
+    adjacent_parts = connector.component.get_adjacent()
     adjacent_connectors = []
 
     for part in adjacent_parts:
-        db_connector = connector_db.get_connector_by_part_code(part.as_string())
+        db_connector = connector_db.get_connector_by_part_code(part.part_code)
         if db_connector:
             adjacent_connectors.append(db_connector)
 
@@ -178,16 +205,17 @@ if __name__ == "__main__":
     print("Searching for connector with part type '3-W-M-F'...")
     connector = connector_db.get_connector_by_part_code("3-W-M-F")
     if connector:
+        print(f"Found connector: {connector} with part number {connector.part_number}")
         print(f"Found connector: {connector.part_code} with part number {connector.part_number}")
     else:
         print("Connector not found.")
 
-    print("Searching for connectors with material 'Z'...")
-    connectors = connector_db.get_connectors_by_material("Z")
-    if connectors:
-        print(f"Found {len(connectors)} connectors with material 'Z':")
-        for conn in connectors:
-            print(f"- {conn.part_code} with part number {conn.part_number}")
+    # print("Searching for connectors with material 'Z'...")
+    # connectors = connector_db.get_connectors_by_material("Z")
+    # if connectors:
+    #     print(f"Found {len(connectors)} connectors with material 'Z':")
+    #     for conn in connectors:
+    #         print(f"- {conn.part_code} with part number {conn.part_number}")
 
     print("Searching for connectors that are compatible with 'PN-87_51_77_70'...")
     connector = connector_db.get_connector_by_part_number("PN-87_51_77_70")

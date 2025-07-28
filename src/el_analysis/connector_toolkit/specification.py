@@ -31,6 +31,10 @@ class Specification(ABC):
         raise NotImplementedError("Subclasses must implement this method.")
     
     @property
+    def part_code(self) -> str:
+        return self.get_part_code()
+
+    @property
     def has_part_code(self) -> bool:
         raise NotImplementedError("Subclasses must implement this method.")
 
@@ -68,6 +72,42 @@ class Specification(ABC):
     def from_part_code_string(cls, part_code: str) -> 'Specification':
         raise NotImplementedError("Subclasses must implement this method.")
     
+    @abstractmethod
+    def get_opposite(self) -> 'Specification':
+        """
+        Returns the opposite part type for this specification.
+        This should be implemented in subclasses to define specific opposite part logic.
+        """
+        raise NotImplementedError("Subclasses must implement this method.")
+    
+    @abstractmethod
+    def get_compatible(self) -> list['Specification']:
+        """
+        Returns a list of part types that are compatible with this specification.
+        This should be implemented in subclasses to define specific compatibility logic.
+        """
+        raise NotImplementedError("Subclasses must implement this method.")
+    
+    @abstractmethod
+    def get_adjacent(self) -> list['Specification']:
+        """
+        Returns a list of adjacent parts that are compatible with this specification.
+        This should be implemented in subclasses to define specific adjacency logic.
+        """
+        raise NotImplementedError("Subclasses must implement this method.")
+    
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Specification):
+            raise ValueError(f"Cannot compare {type(self).__name__} with {type(other).__name__}")
+
+        for property_name, property_value in self.values.items():
+            if property_name not in other.values:
+                return False
+            
+            other_value = other.values[property_name]
+            if other_value != property_value:
+                return False
+        return True    
 
 class DefaultSpecification(Specification):
     """
@@ -130,3 +170,24 @@ class DefaultSpecification(Specification):
         This should be implemented in subclasses to provide specific parsing logic.
         """
         return cls(part_code=part_code)
+    
+    def get_opposite(self) -> 'Specification':
+        """
+        Returns the opposite part type for this specification.
+        This should be implemented in subclasses to define specific opposite part logic.
+        """
+        return self
+    
+    def get_compatible(self) -> list['Specification']:
+        """
+        Returns a list of part types that are compatible with this specification.
+        This should be implemented in subclasses to define specific compatibility logic.
+        """
+        return []
+    
+    def get_adjacent(self) -> list['Specification']:
+        """
+        Returns a list of adjacent parts that are compatible with this specification.
+        This should be implemented in subclasses to define specific adjacency logic.
+        """
+        return []

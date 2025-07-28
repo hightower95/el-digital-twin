@@ -1,6 +1,6 @@
 
 from abc import ABC, abstractmethod
-from el_analysis.models.physical.connector import Connector
+from el_analysis.connector_toolkit.connector import Connector
 from typing import Callable, Optional
 
 class ConnectorDBInterface(ABC):
@@ -12,19 +12,11 @@ class ConnectorDBInterface(ABC):
         pass
 
     @abstractmethod
-    def get_connectors_by_part_type(self, part_type: str) -> list[Connector]:
+    def get_connectors_by_part_code(self, part_code: str) -> list[Connector]:
         pass
     
     @abstractmethod
-    def get_connector_by_part_type(self, part_type: str) -> Optional[Connector]:
-        pass
-
-    @abstractmethod
-    def get_connectors_by_material(self, material: str) -> list[Connector]:
-        pass
-
-    @abstractmethod
-    def get_connectors_by_gender(self, gender: str) -> list[Connector]:
+    def get_connector_by_part_code(self, part_code: str) -> Optional[Connector]:
         pass
 
     @abstractmethod
