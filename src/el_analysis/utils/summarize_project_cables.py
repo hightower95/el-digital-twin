@@ -59,8 +59,8 @@ def _build_data_rows(project: Project ):
                 if interface.connector.part_number:
                     data_row[index + 1] = interface.connector.part_number
 
-                if interface.connector.part_type:
-                    data_row[index + 2] = interface.connector.part_type
+                if interface.connector.part_code:
+                    data_row[index + 2] = interface.connector.part_code
 
         all_data_rows.append(data_row)
 

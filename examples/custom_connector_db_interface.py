@@ -77,7 +77,7 @@ connector_database = ConnectorDatabase()
 
 # In this example, we are adding a custom connector deserializer to the database.
 # This allows us to handle custom connector specifications that are not part of the default library.
-from customer_connector_spec import CustomSpecification
+from custom_connector_spec import CustomSpecification
 connector_database.add_connector_deserialization_handler(CustomSpecification)
 
 database_interface = CustomConnectorDatabaseInterface(connector_database)

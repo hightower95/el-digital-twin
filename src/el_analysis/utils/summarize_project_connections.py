@@ -25,8 +25,9 @@ _report_headers = [
     [
     "Connector 1", "", "", "",
     "Connector 2", "", "", "",
+    "Connection"
     ],
-    ["Address", "Part Number", "Part Type", "Signal Count", "Address", "Part Number", "Part Type", "Signal Count"],
+    ["Address", "Part Number", "Part Type", "Signal Count", "Address", "Part Number", "Part Type", "Signal Count", "Connection Hash"],
 ]
 
 def _build_data(interfaces):
@@ -41,14 +42,15 @@ def _build_data(interfaces):
             interface.address.address_string,
             interface.connector.part_number if interface.connector else None,
             interface.connector.part_code if interface.connector else None,
-            "N/A", # Placeholder for signal count
+            interface.signal_count if interface else "",
         ]
         if connected_interfaces:
             row.extend([
                 connected_interfaces.address.address_string,
                 connected_interfaces.connector.part_number,
                 connected_interfaces.connector.part_code,
-                "N/A",  # Placeholder for signal count
+                connected_interfaces.signal_count if connected_interfaces else "",
+                interface.coupling.connection_hash if interface.coupling else None,
             ])
         else:
             row.extend([None, None, None, None])

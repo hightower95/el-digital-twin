@@ -76,8 +76,8 @@ if __name__ == "__main__":
     print("Creating connection summary...")
     project.create_connection_summary()
 
-    print("Creating interface summary...")
-    project.create_interface_summary()
+    # print("Creating interface summary...")
+    # project.create_interface_summary()
 
     print("Creating signal summary...")
     project.create_signal_summary()
