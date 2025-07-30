@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from el_analysis.models.physical.net import Net
     from el_analysis.models.physical.connection import Connection
     from el_analysis.models.physical.addressable import Addressable
-    from el_analysis.models.logical.signal import Signal
+    # from el_analysis.models.logical.signal import Signal
     from el_analysis.core.location import Location
     from el_analysis.connector_toolkit import ConnectorDBInterface
     from el_analysis.connector_toolkit.connector import Connector
@@ -19,6 +19,8 @@ if TYPE_CHECKING:
 
     
 from el_analysis import config, logging
+from el_analysis.signal_toolkit.signal import Signal
+from el_analysis.signal_toolkit.signal_manager import SignalManager
 
 
 
@@ -37,6 +39,9 @@ class Project:
         self.default_location = Location(default_location,default_location)
         self.locations.append(self.default_location)    
         self._signals: List[Signal] = []  # List of signals in the project
+
+        self._signal_manager = SignalManager() 
+        
         self.connectors_database = connectors_database
         if self.connectors_database is None:
             logging.warning("No connectors database provided. Some features may not work as expected.")
@@ -215,20 +220,22 @@ class Project:
         Returns:
             Signal: The signal with the specified name, or None if not found.
         """
-        for signal in self._signals:
-            if signal.name == signal_name:
-                return signal
+        # for el_analysis.signal_toolkit import SignalParser
+
+        # for signal in self._signals:
+        #     if signal.name == signal_name:
+        #         return signal
             
-        if create_if_not_exists:
-            from el_analysis.models.logical.signal import Signal
-            new_signal = Signal.from_signal_name(signal_name)
-            if new_signal is None:
-                logging.error(f"Failed to create signal '{signal_name}' in project '{self.name}'")
-                return None
-            self._signals.append(new_signal)
-            logging.debug(f"Created new signal '{signal_name}' in project '{self.name}'")
-            return new_signal
-        logging.debug(f"Signal {signal_name} not found in project {self.name}")
+        # if create_if_not_exists:
+        #     from el_analysis.models.logical.signal import Signal
+        #     new_signal = Signal.from_signal_name(signal_name)
+        #     if new_signal is None:
+        #         logging.error(f"Failed to create signal '{signal_name}' in project '{self.name}'")
+        #         return None
+        #     self._signals.append(new_signal)
+        #     logging.debug(f"Created new signal '{signal_name}' in project '{self.name}'")
+        #     return new_signal
+        # logging.debug(f"Signal {signal_name} not found in project {self.name}")
         return None
     
     def create_connection(self, source: Address, destination: Address, signal_name: Optional[str] = None) -> Optional[Connection]:
@@ -253,33 +260,40 @@ class Project:
         source_device = self.search_by_address(source, create_if_not_exists=True)
         destination_device = self.search_by_address(destination, create_if_not_exists=True)
         return_value = None
-
+        # Maybe we should have signal namespaces for each project?
         signal = self.get_signal(signal_name, create_if_not_exists=True) if signal_name else None
 
         if source.same_location(destination) is False:
             logging.warning(f"Creating a connection between {source} and {destination} - they are not in the same location. This may not be intended, but is allowed")
 
-        if isinstance(source_device, Pin) and isinstance(destination_device, Pin):        
-            source_pin = source_device
-            destination_pin = destination_device
+        if isinstance(source_device, Pin) and isinstance(destination_device, Pin):    
 
-            logging.info(f"Connected pins {source} to {destination} with signal '{signal.name if signal else None}'")
-            #Todo - no. We let the interface object handle this
-            net = Pin.create_net(source_pin, destination_pin, signal=signal)
-
-            if net is None:
-                logging.error(f"Failed to create net between {source} and {destination}.")
-                raise ValueError(f"Failed to create net between {source} and {destination}.")
+            source_interface = source_device.interface
+            destination_interface = destination_device.interface
             
-            return_value = net
+            return_value = source_interface.create_net(source.pin, destination_device, signal)
+            destination_interface.create_net(destination.pin, source_device, signal)
 
-            # not net.is_internal means between two devices, e.g. a Cable (CW100) to a Device (A2)
-            # SO we mean, if the net is not internal, we want to register the connection between the interfaces of the devices 
-            if not net.is_internal:
-                if source_pin.interface is None or destination_pin.interface is None:
-                    logging.error(f"Cannot connect pins {source} and {destination} - one or both pins do not have an interface.")
-                    raise ValueError(f"Cannot connect pins {source} and {destination} - one or both pins do not have an interface.")
-                coupling = Interface.connect_interfaces(source_pin.interface, destination_pin.interface)
+            # source_pin = source_device
+            # destination_pin = destination_device
+
+            # logging.info(f"Connected pins {source} to {destination} with signal '{signal.name if signal else None}'")
+            # #Todo - no. We let the interface object handle this
+            # net = Pin.create_net(source_pin, destination_pin, signal=signal)
+
+            # if net is None:
+            #     logging.error(f"Failed to create net between {source} and {destination}.")
+            #     raise ValueError(f"Failed to create net between {source} and {destination}.")
+            
+            # return_value = net
+
+            # # not net.is_internal means between two devices, e.g. a Cable (CW100) to a Device (A2)
+            # # SO we mean, if the net is not internal, we want to register the connection between the interfaces of the devices 
+            # if not net.is_internal:
+            #     if source_pin.interface is None or destination_pin.interface is None:
+            #         logging.error(f"Cannot connect pins {source} and {destination} - one or both pins do not have an interface.")
+            #         raise ValueError(f"Cannot connect pins {source} and {destination} - one or both pins do not have an interface.")
+            #     coupling = Interface.connect_interfaces(source_pin.interface, destination_pin.interface)
 
         elif isinstance(source_device, Interface) and isinstance(destination_device, Interface):
             # If we learn that there are two connecting interfaces, we have a small dilemma

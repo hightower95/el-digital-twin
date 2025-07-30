@@ -1,5 +1,7 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict
+
+from el_analysis.models.physical.net import Net
 
 print(f"Loaded {__name__} module successfully.")
 if TYPE_CHECKING:
@@ -34,7 +36,11 @@ class Interface(Addressable):
         self._connector: Optional[Connector] = None
         self.connector = connector
         self._pins: dict[str, Pin] = {}  #TODO: Import pins from connector part
-        self.connected_to: Optional[Interface] = None  # Reference to another interface this one is connected to
+        self._connected_to: Optional[Interface] = None  # Reference to another interface this one is connected to
+
+        self._nets: Dict[str, Net] = {}  # Dictionary of nets associated with this interface
+        self._internal_nets: List[Net] = []  # List of internal nets
+        self._external_nets: List[Net] = []  # List of external nets
 
         # self._internal_nets: List['Net'] = []  # List of internal nets associated with this interface
         # self._channels: List['Channel'] = []  # List of channels associated with this interface
@@ -61,6 +67,47 @@ class Interface(Addressable):
         
         self._connector = value
 
+    @property
+    def connected_to(self) -> Optional[Interface]:
+        """Returns the interface this one is connected to, if any."""
+        return self._connected_to
+    
+    @connected_to.setter
+    def connected_to(self, new_value: Optional[Interface]):
+        if not isinstance(new_value, Interface) and new_value is not None:
+            raise TypeError(f"Connected interface must be an instance of Interface, got {type(new_value)} instead.")
+        
+        if self._connected_to is new_value:
+            # No change, already connected to the same interface
+            return
+        
+        # warn if connecting to same product
+        if new_value is not None and new_value.address.same_product(self.address):
+            logging.warning(f"Attempted to connect Interface {self.address} to itself - {new_value.address}, allowing connection.")
+
+        if self._connected_to is not None and new_value is None:
+            # Disconnecting from the current interface
+            logging.info(f"Disconnecting Interface {self.address} from Interface {self._connected_to.address}")
+            self._connected_to.connected_to = None
+            self._connected_to = None
+            return
+        
+        elif self._connected_to is not None and new_value is not None:
+            # We are already connected to another interface, raise an error
+            logging.error(f"Interface {self.address} is already connected to {self._connected_to.address}, interfaces only support one connection at a time.")
+            raise ValueError(f"Interface {self.address} is already connected to {self._connected_to.address}, interfaces only support one connection at a time.")
+        
+        elif self._connected_to is None and new_value is None:
+            # No connection, nothing to do - unnecessary case included for readability
+            return
+        
+        elif self._connected_to is None and new_value is not None:
+            # We are not connected to any interface, connect to the new one
+            logging.info(f"Connecting Interface {self.address} to Interface {new_value.address}")
+            self._connected_to = new_value
+            new_value.connected_to = self
+
+
     def _validation(self, interface_name):
         if config.Interface.ValidateInterfaceName:
         
@@ -86,6 +133,9 @@ class Interface(Addressable):
     def part_code(self) -> Optional[str]:
         return self.connector.part_code if self.connector else None
     
+    def get_minified_part_code(self, include_keying: bool = False) -> Optional[str]:
+        return self.connector.get_minified_part_code(include_keying) if self.connector else None
+    
     @property
     def pins(self) -> List[Pin]:
         """Returns a list of pins associated with this interface."""
@@ -95,6 +145,11 @@ class Interface(Addressable):
     def signals(self) -> List[Signal]:
         """Returns a list of signals associated with this interface."""
         return [pin.signal for pin in self.pins if pin.signal is not None]
+    
+    @property
+    def signal_count(self) -> int:
+        """Returns the number of signals associated with this interface."""
+        return len(self.signals)
     
     @property
     def coupling(self) -> Optional[Coupling]:
@@ -122,19 +177,73 @@ class Interface(Addressable):
         self._pins[pin_name] = pin_obj
         logging.debug(f"Adding Pin {pin_name} to interface {self.name} ({self.address})")
         return pin_obj
-    
-    def get_pin(self, pin_name: str) -> Optional[Pin]:
+
+    def get_pin(self, pin_name: str, create_if_not_found: bool = False) -> Optional[Pin]:
         """ Get pin by name, return None if not found """
         if pin_name in self._pins:
             return self._pins[pin_name]
+        elif create_if_not_found:
+            return self.add_pin(pin_name)
         else:
             logging.debug(f"Pin {pin_name} not found in interface {self.name}")
             return None
+        
+    def _make_net(self, from_pin: Pin, to_pin: Pin, signal: Optional[Signal] = None, internal: bool = False) -> Net:
+        """ Create a net between two pins, return the created Net """
+        from el_analysis.models.physical.net import Net
+        from el_analysis.models.physical.pin import Pin
+        if not isinstance(from_pin, Pin) or not isinstance(to_pin, Pin):
+            raise TypeError("Both from_pin and to_pin must be instances of Pin.")
+        
+        # warn if net is to another product
+        if not from_pin.address.same_product(to_pin.address):
+            logging.warning(f"Creating a net between pins {from_pin.name} and {to_pin.name} in different products: {from_pin.address} and {to_pin.address}.")
+        
+        net_name = f"{from_pin.address}-{to_pin.address}"
+        if net_name in self._nets:
+            # logging.debug(f"Net {net_name} already exists in interface {self.name}, returning existing net.")
+            return self._nets[net_name]
 
-   
+        net = Net(from_pin, to_pin, signal=signal)
+        from_pin._attach_net(net)
+        to_pin._attach_net(net)
+        if internal:
+            logging.debug(f"Creating internal net {net.net_id} between {from_pin.name} and {to_pin.name} in interface {self.name}")
+            self._internal_nets.append(net)
+        else:
+            logging.info(f"Creating net {net.net_id} between {from_pin.name} and {to_pin.name} in interface {self.name}")
+            self._internal_nets.append(net)
+
+        self._nets[net_name] = net
+        return net
+        
+    def create_net(self, pin_name: str, other: Pin, signal: Signal) -> Net:
+        """ Connect a pin to another pin with a signal.
+        This method sets the `connected_to` property of this interface to the other interface.
+        @param pin_name: The name of the pin to connect.
+        @param other: The pin to connect to.
+        @param signal: The signal to associate with the connection.
+        """
+        from el_analysis.models.physical.pin import Pin
+        if not isinstance(other, Pin):
+            logging.error(f"Attempted to connect {self.address} to a non-pin object: {other}")
+            raise TypeError(f"The 'other' parameter must be an instance of Pin - got {type(other)}.")
+
+        from_pin = self.get_pin(pin_name)
+
+        if from_pin is None:
+            logging.error(f"Pin {pin_name} not found in interface {self.name}, cannot create net.")
+            raise ValueError(f"Pin {pin_name} not found in interface {self.name}, cannot create net.")
+
+        is_internal = not other.address.same_product(self.address)
+        new_net = self._make_net(from_pin, other, signal, internal=is_internal)
+
+        self.connected_to = other.interface 
+
+        return new_net
+
     
-    def get_minified_part_code(self, include_keying: bool = False) -> Optional[str]:
-        return self.connector.get_minified_part_code(include_keying) if self.connector else None
+    
 
     @staticmethod
     def is_standard_name(name: str) -> bool:
