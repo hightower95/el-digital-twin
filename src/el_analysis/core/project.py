@@ -38,7 +38,6 @@ class Project:
         self.locations: List[Location] = []  # List of location names associated with the project
         self.default_location = Location(default_location,default_location)
         self.locations.append(self.default_location)    
-        self._signals: List[Signal] = []  # List of signals in the project
 
         self._signal_manager = SignalManager() 
         
@@ -159,11 +158,7 @@ class Project:
         Returns:
             List[Signal]: A list of signals in the project.
         """
-        signals = []
-        for device in self.devices:
-            for interface in device.interfaces:
-                signals.extend(interface.signals)
-        return signals
+        return self._signal_manager.list_signals()
 
     def new_device(self, name: str, location: Optional[Location] = None) -> Device:
         """
@@ -197,6 +192,7 @@ class Project:
         Returns:
             Device: The device that was connected, or None if the connection could not be made.
         """
+        raise NotImplementedError("This method is not implemented in the base Project class. Please implement it in a subclass.")
         from el_analysis.models.physical.net import Net
 
         if source_pin is None or destination_pin is None:
@@ -220,23 +216,16 @@ class Project:
         Returns:
             Signal: The signal with the specified name, or None if not found.
         """
-        # for el_analysis.signal_toolkit import SignalParser
+        _signal = self._signal_manager.get_signal(signal_name)
 
-        # for signal in self._signals:
-        #     if signal.name == signal_name:
-        #         return signal
+        if _signal is None:
+            if create_if_not_exists:
+                _signal = self._signal_manager.add_signal(signal_name)
+            else:
+                logging.debug(f"Signal '{signal_name}' not found in project '{self.name}'")
+                return None
             
-        # if create_if_not_exists:
-        #     from el_analysis.models.logical.signal import Signal
-        #     new_signal = Signal.from_signal_name(signal_name)
-        #     if new_signal is None:
-        #         logging.error(f"Failed to create signal '{signal_name}' in project '{self.name}'")
-        #         return None
-        #     self._signals.append(new_signal)
-        #     logging.debug(f"Created new signal '{signal_name}' in project '{self.name}'")
-        #     return new_signal
-        # logging.debug(f"Signal {signal_name} not found in project {self.name}")
-        return None
+        return _signal
     
     def create_connection(self, source: Address, destination: Address, signal_name: Optional[str] = None) -> Optional[Connection]:
         """
@@ -263,16 +252,25 @@ class Project:
         # Maybe we should have signal namespaces for each project?
         signal = self.get_signal(signal_name, create_if_not_exists=True) if signal_name else None
 
+        if signal is None:
+            logging.error(f"Signal '{signal_name}' not found in project '{self.name}' - cannot create connection.")
+            raise ValueError(f"Signal '{signal_name}' not found in project '{self.name}' - cannot create connection.")
+
         if source.same_location(destination) is False:
             logging.warning(f"Creating a connection between {source} and {destination} - they are not in the same location. This may not be intended, but is allowed")
 
         if isinstance(source_device, Pin) and isinstance(destination_device, Pin):    
+            source_pin = source_device
+            destination_pin = destination_device
 
-            source_interface = source_device.interface
-            destination_interface = destination_device.interface
-            
-            return_value = source_interface.create_net(source.pin, destination_device, signal)
-            destination_interface.create_net(destination.pin, source_device, signal)
+            source_interface = source_pin.interface
+            destination_interface = destination_pin.interface
+
+            if source_interface is None or destination_interface is None:
+                logging.error(f"Cannot connect pins {source} and {destination} - one or both pins do not have an interface.")
+                raise ValueError(f"Cannot connect pins {source} and {destination} - one or both pins do not have an interface.")
+            return_value = source_interface.create_net(source_pin, destination_pin, signal)
+            destination_interface.create_net(destination_pin, source_pin, signal)
 
             # source_pin = source_device
             # destination_pin = destination_device

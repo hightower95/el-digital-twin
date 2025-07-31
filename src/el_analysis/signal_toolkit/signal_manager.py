@@ -27,7 +27,7 @@ class SignalManager:
         # If no specific parser found, use the default parser
         return DefaultSignalGroupParser
 
-    def add_signal(self, signal_name, awg) -> Optional[Signal]:
+    def add_signal(self, signal_name: str, awg: Optional[str] = None) -> Optional[Signal]:
 
         # When we create a signal, we are also interested in the group it belongs to.
         # So whilst we return a signal, behind the scenes we are also managing the signal group
@@ -75,5 +75,5 @@ class SignalManager:
         signal_data = self._signals.get(signal_name, None)
         return signal_data
 
-    def list_signals(self):
-        return list(self._signals.keys())
+    def list_signals(self) -> List[Signal]:
+        return list(self._signals.values())

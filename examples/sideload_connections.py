@@ -81,3 +81,10 @@ if __name__ == "__main__":
 
     print("Creating signal summary...")
     project.create_signal_summary()
+
+    for signal in project.signals:
+        print(f"Signal: {signal.name}, Type: {signal.signal_type}, Group: {signal.signal_group}")
+
+        # print(f" {signal.name} connections: ")
+        # for touchpoint in signal.touchpoints:
+        #     print(f"  Touchpoint: {touchpoint.address}")

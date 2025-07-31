@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from el_analysis.models import Device, Pin
     from el_analysis import Address
     from el_analysis.models.physical.coupling import Coupling
-    from el_analysis.models.logical.signal import Signal
+    from el_analysis.signal_toolkit.signal import Signal
 
 print(f"Loaded {__name__} module successfully.")
 from el_analysis.connector_toolkit.connector import Connector
@@ -212,12 +212,12 @@ class Interface(Addressable):
             self._internal_nets.append(net)
         else:
             logging.info(f"Creating net {net.net_id} between {from_pin.name} and {to_pin.name} in interface {self.name}")
-            self._internal_nets.append(net)
+            self._external_nets.append(net)
 
         self._nets[net_name] = net
         return net
-        
-    def create_net(self, pin_name: str, other: Pin, signal: Signal) -> Net:
+
+    def create_net(self, source_pin: Pin, other_pin: Pin, signal: Signal, create_pins_if_not_exists: bool = True) -> Net:
         """ Connect a pin to another pin with a signal.
         This method sets the `connected_to` property of this interface to the other interface.
         @param pin_name: The name of the pin to connect.
@@ -225,20 +225,25 @@ class Interface(Addressable):
         @param signal: The signal to associate with the connection.
         """
         from el_analysis.models.physical.pin import Pin
-        if not isinstance(other, Pin):
-            logging.error(f"Attempted to connect {self.address} to a non-pin object: {other}")
-            raise TypeError(f"The 'other' parameter must be an instance of Pin - got {type(other)}.")
+        
+        if not isinstance(source_pin, Pin):
+            logging.error(f"Attempted to connect {self.address} to a non-pin object: {source_pin}")
+            raise TypeError(f"The 'source_pin' parameter must be an instance of Pin - got {type(source_pin)}.")
+        if not isinstance(other_pin, Pin):
+            logging.error(f"Attempted to connect {self.address} to a non-pin object: {other_pin}")
+            raise TypeError(f"The 'other' parameter must be an instance of Pin - got {type(other_pin)}.")
 
-        from_pin = self.get_pin(pin_name)
+        # check source pin is in this interface
+        if source_pin.interface is not self:
+            logging.error(f"Pin {source_pin.name} is not in interface {self.name}, cannot create net.")
+            raise ValueError(f"Pin {source_pin.name} is not in interface {self.name}, cannot create net.")
 
-        if from_pin is None:
-            logging.error(f"Pin {pin_name} not found in interface {self.name}, cannot create net.")
-            raise ValueError(f"Pin {pin_name} not found in interface {self.name}, cannot create net.")
+        is_internal = not other_pin.address.same_product(self.address)
+        new_net = self._make_net(source_pin, other_pin, signal, internal=is_internal)
 
-        is_internal = not other.address.same_product(self.address)
-        new_net = self._make_net(from_pin, other, signal, internal=is_internal)
+        signal.attach_net(new_net)
 
-        self.connected_to = other.interface 
+        self.connected_to = other_pin.interface 
 
         return new_net
 

@@ -8,6 +8,8 @@ if TYPE_CHECKING:
     from el_analysis.models.physical.net import Net
     from el_analysis.models.physical.addressable import Addressable
 
+from el_analysis import logging
+
 class SignalGroup(ABC):
         """
         Base class for signal groups.
@@ -175,8 +177,9 @@ class Signal:
         self.shielded_by: Optional[Signal] = None  # Signal that shields this signal, if any
         self.is_ground: bool = False
 
-        self.touchpoints: list[Addressable] = []  # List of connections this signal touches
+        # self.touchpoints: list[Addressable] = []  # List of connections this signal touches
         self.connections: List[Net] = []
+        self.nets = {}  # Dictionary to hold nets associated with this signal
 
     def __repr__(self):
         return f"Signal(name='{self.name}', minified_name='{self.minified_name}')"
@@ -200,3 +203,29 @@ class Signal:
             str: The minified name of the signal.
         """
         return f"{self.name}_{self.awg}"
+    
+    
+    def attach_net(self, net: Net) -> None:
+        """
+        Attach a net to this signal.
+        
+        Args:
+            net (Net): The net to attach to this signal.
+        """
+        if net.connection_id not in self.nets:
+            self.nets[net.connection_id] = net
+            logging.debug(f"Signal '{self.name}' attached to net '{net.net_id}'")
+        
+    @property
+    def touchpoints(self) -> List[Addressable]:
+        """
+        Get the list of touchpoints for this signal.
+        
+        Returns:
+            List[Addressable]: The list of touchpoints.
+        """
+        _touchpoints = set()
+        for net in self.nets.values():
+            _touchpoints.add(net.source)
+            _touchpoints.add(net.destination)
+        return list(_touchpoints)
