@@ -1,1 +1,2 @@
 from .signal_parsers import add_signal_parser
+from el_analysis.signal_toolkit.utils import group_signal_list_by_signal_type

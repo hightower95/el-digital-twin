@@ -14,7 +14,11 @@ class DefaultSignalGroup(SignalGroup):
 
     @property
     def name(self) -> str:
-        return "Default Signal Group"
+        # if len(self.signals) == 1:
+        #     return self.signals[0].name
+        # else:
+        #     return str(id(self))
+        return str(id(self))
     
     @property
     def signal_count(self) -> int:

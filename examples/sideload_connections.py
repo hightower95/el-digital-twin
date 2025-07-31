@@ -85,6 +85,13 @@ if __name__ == "__main__":
     for signal in project.signals:
         print(f"Signal: {signal.name}, Type: {signal.signal_type}, Group: {signal.signal_group}")
 
+
+    for interface in project.interfaces:
+        if interface.signal_count > 0:
+            print(f"Interface: {interface.name}")
+
+            print(interface.get_channels())
+
         # print(f" {signal.name} connections: ")
         # for touchpoint in signal.touchpoints:
         #     print(f"  Touchpoint: {touchpoint.address}")

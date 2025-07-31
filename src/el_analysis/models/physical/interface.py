@@ -243,12 +243,18 @@ class Interface(Addressable):
 
         signal.attach_net(new_net)
 
-        self.connected_to = other_pin.interface 
+        if other_pin.interface is not None:
+            self.connect_to(other_pin.interface)
 
         return new_net
 
-    
-    
+    def get_channels(self) -> Dict[str, List[Signal]]:
+        """ Returns a list of channels associated with this interface.
+        This method is a placeholder and should be implemented in subclasses.
+        """
+        from el_analysis.signal_toolkit import group_signal_list_by_signal_type
+        return group_signal_list_by_signal_type(self.signals)
+
 
     @staticmethod
     def is_standard_name(name: str) -> bool:
