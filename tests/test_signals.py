@@ -17,7 +17,7 @@ class TestSignals(unittest.TestCase):
         minified_name = "+28 Power_AWG20"
 
         # Simulate adding a signal
-        signal = Signal(signal_name, awg)
+        signal = Signal(signal_name, awg=awg)
 
         # Check if the signal was created correctly
         self.assertIsNotNone(signal)
@@ -27,10 +27,12 @@ class TestSignals(unittest.TestCase):
 
     def test_signal_manager_identify_parser(self):
         from el_analysis.signal_toolkit.signal_manager import SignalManager
+        from el_analysis.signal_toolkit.signal_parsers.base import DefaultSignalGroupParser
         manager = SignalManager()
 
         parser = manager._identify_parser("+28 Power")
         self.assertIsNotNone(parser)
+        self.assertEqual(parser, DefaultSignalGroupParser)
         self.assertTrue(parser.can_parse("+28 Power"))
         self.assertEqual(parser.signal_type, "default")
 
@@ -39,12 +41,13 @@ class TestSignals(unittest.TestCase):
         parser = DefaultSignalGroupParser()
 
         signal_name = "+28 Power"
-        group = parser.parse_signal(signal_name)
+        signal = parser.parse_signal(signal_name)
+        signal_group = signal.signal_group
 
-        self.assertIsNotNone(group)
-        self.assertIsInstance(group, DefaultSignalGroup)
-        self.assertEqual(group.name, "Default Signal Group")
-        self.assertEqual(group.signal_type, DefaultSignalGroupParser.signal_type)
+        self.assertIsNone(signal_group)
+        self.assertEqual(signal.name, signal_name)
+        self.assertTrue(parser.can_parse(signal_name))
+        self.assertEqual(signal.signal_type, DefaultSignalGroup.signal_type)
 
     def test_signal_manager_add_default_signal(self):
         from el_analysis.signal_toolkit.signal_manager import SignalManager
@@ -93,6 +96,40 @@ class TestSignals(unittest.TestCase):
 
         # Check if all object IDs are unique
         self.assertEqual(len(object_ids), len(set(object_ids)))
-        
+
+    def test_add_signal_with_same_name(self):
+        from el_analysis.signal_toolkit.signal_manager import SignalManager
+        manager = SignalManager()
+
+        signal_name = "+28 Power"
+        awg = "AWG20"
+
+        # Add the signal to the manager
+        signal1 = manager.add_signal(signal_name, awg)
+        self.assertIsNotNone(signal1)
+
+        # Add the same signal again
+        signal2 = manager.add_signal(signal_name, awg)
+        self.assertIsNotNone(signal2)
+
+        # Check if both signals are the same instance
+        self.assertIs(signal1, signal2)
+
+    def test_signal_manager_get_signal(self):
+        from el_analysis.signal_toolkit.signal_manager import SignalManager
+        manager = SignalManager()
+
+        signal_name = "+28 Power"
+        awg = "AWG20"
+
+        # Add the signal to the manager
+        signal = manager.add_signal(signal_name, awg)
+
+        # Retrieve the signal
+        retrieved_signal = manager.get_signal(signal_name)
+
+        # Check if the retrieved signal matches the original
+        self.assertIsNotNone(retrieved_signal)
+        self.assertEqual(retrieved_signal.name, signal_name)
 
     
