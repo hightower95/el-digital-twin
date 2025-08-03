@@ -187,8 +187,8 @@ class Interface(Addressable):
         else:
             logging.debug(f"Pin {pin_name} not found in interface {self.name}")
             return None
-        
-    def _make_net(self, from_pin: Pin, to_pin: Pin, signal: Optional[Signal] = None, internal: bool = False) -> Net:
+
+    def _make_net(self, from_pin: Pin, to_pin: Pin, signal: Optional[Signal] = None, internal: bool = False, awg: Optional[str] = None) -> Net:
         """ Create a net between two pins, return the created Net """
         from el_analysis.models.physical.net import Net
         from el_analysis.models.physical.pin import Pin
@@ -217,7 +217,7 @@ class Interface(Addressable):
         self._nets[net_name] = net
         return net
 
-    def create_net(self, source_pin: Pin, other_pin: Pin, signal: Signal, create_pins_if_not_exists: bool = True) -> Net:
+    def create_net(self, source_pin: Pin, other_pin: Pin, signal: Signal, create_pins_if_not_exists: bool = True, awg: Optional[str] = None) -> Net:
         """ Connect a pin to another pin with a signal.
         This method sets the `connected_to` property of this interface to the other interface.
         @param pin_name: The name of the pin to connect.
@@ -239,7 +239,7 @@ class Interface(Addressable):
             raise ValueError(f"Pin {source_pin.name} is not in interface {self.name}, cannot create net.")
 
         is_internal = not other_pin.address.same_product(self.address)
-        new_net = self._make_net(source_pin, other_pin, signal, internal=is_internal)
+        new_net = self._make_net(source_pin, other_pin, signal, internal=is_internal, awg=awg)
 
         signal.attach_net(new_net)
 

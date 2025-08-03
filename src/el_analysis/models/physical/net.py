@@ -3,8 +3,9 @@ from typing import TYPE_CHECKING
 
 print(f"Loaded {__name__} module successfully.")
 if TYPE_CHECKING:
-    from el_analysis.models import Interface, Signal, Pin
+    from el_analysis.models import Interface, Pin
     from el_analysis import Address
+    from el_analysis.signal_toolkit.signal import Signal
 
 from dataclasses import dataclass
 from typing import Optional, Any

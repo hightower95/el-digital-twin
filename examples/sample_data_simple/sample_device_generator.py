@@ -158,6 +158,15 @@ cable_names = [
 min_connectors = 2
 max_connectors = 7
 
+awg_choices = ["AWG4", "AWG12", "AWG16", "AWG20", "AWG24", ]
+
+def get_awg_index(signal_name: str) -> int:
+    """Returns a random AWG value or None."""
+    if "CH" in signal_name:
+        return awg_choices.index("AWG24")
+        
+    return awg_choices.index(random.choice(awg_choices))
+
 location = "C"
 
 cable_interfaces = {
@@ -165,13 +174,31 @@ cable_interfaces = {
 }
 device_interfaces = {}
 
+
+@dataclass
+class Signal:
+    name: str
+    awg_index: int # index so that we can map to awg_choices and do +1 or -1 randomly
+
+    @property
+    def awg(self) -> str:
+        """Returns the AWG value based on the index."""
+        if self.awg_index < 0 or self.awg_index >= len(awg_choices):
+            return "Unknown"
+        return awg_choices[self.awg_index]
+
+    def __repr__(self):
+        return f"Signal(name='{self.name}', awg='{awg_choices[self.awg_index]}')"
+
+    def __str__(self):
+        return self.name
 @dataclass
 class Interface:
     name: str
     connector: Connector
     connects_to: Optional['Interface'] = None
     attached_to: Optional[Union['Device', 'Cable']] = None  # Can be a Device or Cable
-    pins: dict[str, str] = field(default_factory=dict)  # Pin mapping for signals
+    pins: dict[str, Signal] = field(default_factory=dict)  # Pin mapping for signals
 
     @property
     def part_number(self):
@@ -218,10 +245,13 @@ class Device:
         return [interface for interface in self.interfaces if interface.connects_to is None]
     
     def get_signals(self):
-        signals = set()
+        signals = list()
         for interface in self.interfaces:
             if interface.connects_to is not None:
-                signals.update(interface.pins.values())
+                interface_signals = interface.pins.values()
+                for interface_signal in interface_signals:
+                    if interface_signal not in signals:
+                        signals.append(interface_signal)
         return signals
     
     @property
@@ -330,6 +360,8 @@ def connect_devices(devices: list[Device], cables: list[Cable]):
 connect_devices(devices, cables)
 
 # lets assume every connctor has 6 pins
+
+
 @dataclass
 class Connection:
     from_product: str
@@ -338,7 +370,7 @@ class Connection:
     to_product: str
     to_interface: str
     to_pin: str
-    signal: Optional[str] = None
+    signal: Optional[Signal] = None
 
     def to_dict(self):
         return {
@@ -351,18 +383,22 @@ class Connection:
 
 connections = []
 
-def generate_signals(count=DEFAULT_MAX_SIGNALS, seed_signals=None, group_enabled: bool = True) -> list[str]:
-    signals_generated = set()
+
+def generate_signals(count=DEFAULT_MAX_SIGNALS, seed_signals=None, group_enabled: bool = True) -> list[Signal]:
+    signals_generated = list[Signal]()
     if seed_signals:
-        filtered_seed_signals = [s for s in seed_signals if "SignalGroup" not in s]
+        filtered_seed_signals = [s for s in seed_signals if "SignalGroup" not in s.name]
         seed_signals = filtered_seed_signals if filtered_seed_signals else None
 
     while len(signals_generated) < count:
         if seed_signals and random.random() < CHANCE_REUSE_SIGNAL:  # 50% chance to use seed signals
             # Use seed signals if available
-            signal = random.choice(seed_signals)
-            signals_generated.add(signal)
-            seed_signals.remove(signal)  # Remove to avoid duplicates
+            signal_name = random.choice(seed_signals)
+            awg_index = get_awg_index(signal_name)
+
+            signal = Signal(name=signal_name, awg_index=awg_index)
+            signals_generated.append(signal)
+            seed_signals.remove(signal.name)  # Remove to avoid duplicates
             print(f"Using seed signal: {signal}")
 
         elif group_enabled and random.random() < CHANCE_GENERATE_SIGNAL_GROUP:  # 10% chance to generate a signal group
@@ -370,35 +406,42 @@ def generate_signals(count=DEFAULT_MAX_SIGNALS, seed_signals=None, group_enabled
             a = f"SignalGroup-CH-{group_name}-high"
             b = f"SignalGroup-CH-{group_name}-low"
             c = f"SignalGroup-CH-{group_name}-gnd"
-            signals_generated.add(a)
-            signals_generated.add(b)
-            signals_generated.add(c)
+            
+            awg_index = get_awg_index(a)
+            for name in (a, b, c):
+                signal = Signal(name=name, awg_index=awg_index)
+                signals_generated.append(signal)
 
         elif random.random() < CHANCE_GENERATE_SIGNAL_PAIR:  # 40% chance to generate signal pair
             signal_id = random.randint(1000, 9999)
             a = f"SignalGroup-28V-{signal_id}-A"
             b = f"SignalGroup-GND-{signal_id}-B"
-            signals_generated.add(a)
-            signals_generated.add(b)
+
+            awg_index = get_awg_index(b)
+            for name in (a, b):
+                signal = Signal(name=name, awg_index=awg_index)
+                signals_generated.append(signal)
 
         else:
-            signals_generated.add(f"Signal-{random.randint(1000, 9999)}")
+            signal_name = f"Signal-{random.randint(1000, 9999)}"
+            awg_index = get_awg_index(signal_name)
+            signals_generated.append(Signal(name=signal_name, awg_index=awg_index))
 
-    return list(signals_generated)
+    return signals_generated
 
 
 def generate_signals_to_interface(interface: Interface, max_signals=DEFAULT_MAX_SIGNALS):
     if interface.connects_to is None:
         return
-    
-    def assign_pins(signals: list[str]):
+
+    def assign_pins(signals: list[Signal]):
         assignment = {}
         if len(signals) == 0:
             return assignment
         for i, signal in enumerate(signals):
             pin_number = random.randint(1, 55)
             pin_name = f"{pin_number:02d}"
-            assignment[signal] = pin_name
+            assignment[signal.name] = pin_name
         return assignment
     
     available_signals = set()
@@ -406,19 +449,32 @@ def generate_signals_to_interface(interface: Interface, max_signals=DEFAULT_MAX_
         available_signals = interface.attached_to.get_signals()
 
     signals = generate_signals(max_signals, seed_signals=available_signals)
-    pin_mapping = assign_pins(signals)
+    # pin_mapping = assign_pins(signals)
 
-    for signal, pin in pin_mapping.items():
-        interface.pins[pin] = signal
+    for signal in signals:
+        pin_number = random.randint(1, 55)
+        pin_name = f"{pin_number:02d}"
+        interface.pins[pin_name] = signal
 
-        if "SignalGroup" not in signal and random.random() < CHANCE_FAIL_COPY_ACROSS_SIGNALS:
+        if "SignalGroup" not in signal.name and random.random() < CHANCE_FAIL_COPY_ACROSS_SIGNALS:
             if isinstance(interface.connects_to, Interface):
-                interface.connects_to.pins[pin] = signal
+                interface.connects_to.pins[pin_name] = signal
                 # print(f"Adding signal {signal} to {interface.address} on pin {pin}")
                 # print(f"Adding signal {signal} to {interface.connects_to.address} on pin {pin}")
         else:
-            interface.connects_to.pins[pin] = signal
-            # print(f"Adding signal {signal} to {interface.address} on pin {pin}")
+            interface.connects_to.pins[pin_name] = signal
+
+    # for signal, pin in pin_mapping.items():
+    #     interface.pins[pin] = signal
+
+    #     if "SignalGroup" not in signal and random.random() < CHANCE_FAIL_COPY_ACROSS_SIGNALS:
+    #         if isinstance(interface.connects_to, Interface):
+    #             interface.connects_to.pins[pin] = signal
+    #             # print(f"Adding signal {signal} to {interface.address} on pin {pin}")
+    #             # print(f"Adding signal {signal} to {interface.connects_to.address} on pin {pin}")
+    #     else:
+    #         interface.connects_to.pins[pin] = signal
+    #         # print(f"Adding signal {signal} to {interface.address} on pin {pin}")
 
 # Improvement, we follow the existing connection map and fill in signals.
 # e.g. a signal added to A1.X1 that connects to B2.X1 could also turn up on another B2 interface
@@ -489,4 +545,4 @@ output_connection_filename = os.path.join(os.path.dirname(__file__), output_conn
 with open(output_connection_filename, "w") as fp:
     for conn in connections:
         fp.write(f"{conn.from_product},{conn.from_interface},{conn.from_pin},"
-                 f"{conn.to_product},{conn.to_interface},{conn.to_pin},{conn.signal}\n")
+                 f"{conn.to_product},{conn.to_interface},{conn.to_pin},{conn.signal}, {conn.signal.awg}\n")
