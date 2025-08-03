@@ -1,6 +1,6 @@
 from el_analysis.signal_toolkit.signal import Signal, SignalGroup
 from el_analysis.models.physical.pin import Pin
-from el_analysis.models.physical.net import Net
+from el_analysis.signal_toolkit.net import Net
 from typing import List, Dict
 
 def group_signal_list_by_signal_type(signal_list: List[Signal]) -> Dict[str, List[Signal]]:

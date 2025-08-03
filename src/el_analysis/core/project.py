@@ -7,7 +7,7 @@ if TYPE_CHECKING:
     from el_analysis.models.physical.device import Device
     from el_analysis.models.physical.interface import Interface
     from el_analysis.models.physical.pin import Pin
-    from el_analysis.models.physical.net import Net
+    from el_analysis.signal_toolkit.net import Net
     from el_analysis.models.physical.connection import Connection
     from el_analysis.models.physical.addressable import Addressable
     # from el_analysis.models.logical.signal import Signal

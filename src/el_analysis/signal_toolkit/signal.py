@@ -5,9 +5,9 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
 if TYPE_CHECKING:
-    from el_analysis.models.physical.net import Net
     from el_analysis.models.physical.addressable import Addressable
 
+from el_analysis.signal_toolkit.net import Net
 from el_analysis import logging
 
 class SignalGroup(ABC):
@@ -215,6 +215,21 @@ class Signal:
         if net.connection_id not in self.nets:
             self.nets[net.connection_id] = net
             logging.debug(f"Signal '{self.name}' attached to net '{net.net_id}'")
+
+    def make_net(self, source: Addressable, destination: Addressable, awg: Optional[str] = None) -> Net:
+        """
+        Create a new net for this signal.
+        
+        Args:
+            source (Addressable): The source addressable of the net.
+            destination (Addressable): The destination addressable of the net.
+        
+        Returns:
+            Net: The created net.
+        """
+        net = Net(source=source, destination=destination, signal=self, awg=awg)
+        self.attach_net(net)
+        return net
         
     @property
     def touchpoints(self) -> List[Addressable]:

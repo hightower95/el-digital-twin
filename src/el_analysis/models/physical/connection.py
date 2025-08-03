@@ -2,9 +2,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 print(f"Loaded {__name__} module successfully.")
-if TYPE_CHECKING:
-    from el_analysis.models import Interface, Signal, Pin
-    from el_analysis import Address
+# if TYPE_CHECKING:
+#     from el_analysis.models import Interface, Pin
+#     from el_analysis import Address
 from el_analysis.models.physical.addressable import Addressable
 
 from dataclasses import dataclass

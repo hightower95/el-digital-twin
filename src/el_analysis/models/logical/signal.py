@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 print(f"Loaded {__name__} module successfully.")
 if TYPE_CHECKING:
     from el_analysis.models import Pin, Connection
-    from el_analysis.models.physical.net import Net
+    from el_analysis.signal_toolkit.net import Net
     from el_analysis import Address
 
 

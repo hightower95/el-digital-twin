@@ -19,6 +19,7 @@ class ImportedConnection:
     source: el_analysis.Address
     destination: el_analysis.Address
     signal_name: str
+    awg: str
 
     def __repr__(self):
         return f"ImportedConnection(source={self.source}, destination={self.destination}, signal_name='{self.signal_name}')"
@@ -41,7 +42,7 @@ def read_connections_from_file(file_path: str) -> list[ImportedConnection]:
                 continue  # Skip empty lines
             parts = line.strip().split(",")
 
-            if len(parts) != 7:
+            if len(parts) != 8:
                 print(f"Invalid connection format: {line.strip()}")
                 continue
 
@@ -52,6 +53,7 @@ def read_connections_from_file(file_path: str) -> list[ImportedConnection]:
             interface_2 = parts[4].strip()
             pin_2 = parts[5].strip()
             signal_name = parts[6].strip()
+            awg = parts[7].strip() 
 
             address_1 = el_analysis.Address.from_tuple(
                 ("C", device_1, interface_1, pin_1)
@@ -61,7 +63,7 @@ def read_connections_from_file(file_path: str) -> list[ImportedConnection]:
                 ("C", device_2, interface_2, pin_2)
             )
 
-            connections.append(ImportedConnection(address_1, address_2, signal_name))
+            connections.append(ImportedConnection(address_1, address_2, signal_name, awg))
     return connections
 
 connections = read_connections_from_file(filepath)

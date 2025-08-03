@@ -3,9 +3,10 @@ from typing import TYPE_CHECKING
 
 print(f"Loaded {__name__} module successfully.")
 if TYPE_CHECKING:
-    from el_analysis.models import Interface, Connection, Net
-    from el_analysis.models import Signal
+    from el_analysis.models import Interface, Connection
+    from el_analysis.signal_toolkit.signal import Signal
     from el_analysis import Address
+    from el_analysis.signal_toolkit.net import Net
 
 from dataclasses import dataclass
 from typing import Optional, Any, List
@@ -96,26 +97,26 @@ class Pin(Addressable):
         return (f"Pin(name={self.name!r}, address={self.address!r}, "
                 f"interface={self.interface!r})")
     
-    @staticmethod
-    def create_net(pin_a: Pin, pin_b: Pin, signal: Optional[Signal] = None) -> Optional[Net]:
-        """
-        Attach a net to two pins.
-        This is used to create a connection between two pins.
-        """
-        from el_analysis.models.physical.net import Net
-        if pin_a is None or pin_b is None:
-            logging.error(f"Failed to attach nets to pins - one or both pins are None. Pin A: {pin_a}, Pin B: {pin_b}")
-            return None
+    # @staticmethod
+    # def create_net(pin_a: Pin, pin_b: Pin, signal: Optional[Signal] = None) -> Optional[Net]:
+    #     """
+    #     Attach a net to two pins.
+    #     This is used to create a connection between two pins.
+    #     """
+    #     from el_analysis.signal_toolkit.net import Net
+    #     if pin_a is None or pin_b is None:
+    #         logging.error(f"Failed to attach nets to pins - one or both pins are None. Pin A: {pin_a}, Pin B: {pin_b}")
+    #         return None
         
-        # Create a new Net instance and attach it to both pins, where pin_a is the source and pin_b is the destination.
-        net = Net(pin_a, pin_b, signal=signal)
-        if signal is not None:
-            signal.link_to_net(net)
+    #     # Create a new Net instance and attach it to both pins, where pin_a is the source and pin_b is the destination.
+    #     net = Net(pin_a, pin_b, signal=signal)
+    #     if signal is not None:
+    #         signal.link_to_net(net)
 
-        pin_a._attach_net(net)
-        pin_b._attach_net(net.flipped())
+    #     pin_a._attach_net(net)
+    #     pin_b._attach_net(net.flipped())
 
-        return net
+    #     return net
 
 
     

@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional
 if TYPE_CHECKING:
     from el_analysis.core import Project
     from el_analysis.signal_toolkit.signal import Signal
-    from el_analysis.models.physical.net import Net
+    from el_analysis.signal_toolkit.net import Net
 
 from dataclasses import dataclass
 

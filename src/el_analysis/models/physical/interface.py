@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, Dict
 
-from el_analysis.models.physical.net import Net
+# from el_analysis.signal_toolkit.net import Net
 
 print(f"Loaded {__name__} module successfully.")
 if TYPE_CHECKING:
@@ -9,6 +9,7 @@ if TYPE_CHECKING:
     from el_analysis import Address
     from el_analysis.models.physical.coupling import Coupling
     from el_analysis.signal_toolkit.signal import Signal
+    from el_analysis.signal_toolkit.net import Net
 
 print(f"Loaded {__name__} module successfully.")
 from el_analysis.connector_toolkit.connector import Connector
@@ -188,23 +189,22 @@ class Interface(Addressable):
             logging.debug(f"Pin {pin_name} not found in interface {self.name}")
             return None
 
-    def _make_net(self, from_pin: Pin, to_pin: Pin, signal: Optional[Signal] = None, internal: bool = False, awg: Optional[str] = None) -> Net:
+    def _make_net(self, from_pin: Pin, to_pin: Pin, signal: Signal, internal: bool = False, awg: Optional[str] = None) -> Net:
         """ Create a net between two pins, return the created Net """
-        from el_analysis.models.physical.net import Net
         from el_analysis.models.physical.pin import Pin
         if not isinstance(from_pin, Pin) or not isinstance(to_pin, Pin):
             raise TypeError("Both from_pin and to_pin must be instances of Pin.")
         
         # warn if net is to another product
-        if not from_pin.address.same_product(to_pin.address):
-            logging.warning(f"Creating a net between pins {from_pin.name} and {to_pin.name} in different products: {from_pin.address} and {to_pin.address}.")
-        
+        if not from_pin.address.same_location(to_pin.address):
+            logging.warning(f"Creating a net between pins {from_pin.name} and {to_pin.name} in different locations: {from_pin.address} and {to_pin.address}.")
+
         net_name = f"{from_pin.address}-{to_pin.address}"
         if net_name in self._nets:
             # logging.debug(f"Net {net_name} already exists in interface {self.name}, returning existing net.")
             return self._nets[net_name]
 
-        net = Net(from_pin, to_pin, signal=signal)
+        net = signal.make_net(from_pin, to_pin)
         from_pin._attach_net(net)
         to_pin._attach_net(net)
         if internal:

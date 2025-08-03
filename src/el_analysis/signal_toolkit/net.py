@@ -1,6 +1,8 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
+from el_analysis.models.physical.addressable import Addressable
+
 print(f"Loaded {__name__} module successfully.")
 if TYPE_CHECKING:
     from el_analysis.models import Interface, Pin
@@ -21,14 +23,11 @@ class Net(Connection):
     This means it has no knowledge of twisting / shielding - simply the two points it joins together
     and the signal that is carried by that connection and AWG data
     '''
-    # source: Pin
-    # destination: Pin
+    # source: Addressable
+    # destination: Addressable
     signal: Optional[Signal] = None
     # other data fields
-    # awg: Optional[int] = None
-
-
-
+    awg: Optional[str] = None
 
     @property
     def is_internal(self) -> bool:
