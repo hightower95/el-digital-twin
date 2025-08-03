@@ -226,8 +226,12 @@ class Project:
                 return None
             
         return _signal
-    
-    def create_connection(self, source: Address, destination: Address, signal_name: Optional[str] = None) -> Optional[Connection]:
+
+    def create_connection(self, 
+                          source: Address, 
+                          destination: Address, 
+                          signal_name: str, 
+                          awg: Optional[str] = None) -> Optional[Connection]:
         """
         Creates a connection between two devices or interfaces in the project.
         
@@ -269,29 +273,8 @@ class Project:
             if source_interface is None or destination_interface is None:
                 logging.error(f"Cannot connect pins {source} and {destination} - one or both pins do not have an interface.")
                 raise ValueError(f"Cannot connect pins {source} and {destination} - one or both pins do not have an interface.")
-            return_value = source_interface.create_net(source_pin, destination_pin, signal)
-            destination_interface.create_net(destination_pin, source_pin, signal)
-
-            # source_pin = source_device
-            # destination_pin = destination_device
-
-            # logging.info(f"Connected pins {source} to {destination} with signal '{signal.name if signal else None}'")
-            # #Todo - no. We let the interface object handle this
-            # net = Pin.create_net(source_pin, destination_pin, signal=signal)
-
-            # if net is None:
-            #     logging.error(f"Failed to create net between {source} and {destination}.")
-            #     raise ValueError(f"Failed to create net between {source} and {destination}.")
-            
-            # return_value = net
-
-            # # not net.is_internal means between two devices, e.g. a Cable (CW100) to a Device (A2)
-            # # SO we mean, if the net is not internal, we want to register the connection between the interfaces of the devices 
-            # if not net.is_internal:
-            #     if source_pin.interface is None or destination_pin.interface is None:
-            #         logging.error(f"Cannot connect pins {source} and {destination} - one or both pins do not have an interface.")
-            #         raise ValueError(f"Cannot connect pins {source} and {destination} - one or both pins do not have an interface.")
-            #     coupling = Interface.connect_interfaces(source_pin.interface, destination_pin.interface)
+            return_value = source_interface.create_net(source_pin, destination_pin, signal, awg=awg)
+            destination_interface.create_net(destination_pin, source_pin, signal, awg=awg)
 
         elif isinstance(source_device, Interface) and isinstance(destination_device, Interface):
             # If we learn that there are two connecting interfaces, we have a small dilemma

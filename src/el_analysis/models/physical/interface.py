@@ -189,7 +189,12 @@ class Interface(Addressable):
             logging.debug(f"Pin {pin_name} not found in interface {self.name}")
             return None
 
-    def _make_net(self, from_pin: Pin, to_pin: Pin, signal: Signal, internal: bool = False, awg: Optional[str] = None) -> Net:
+    def _make_net(self, 
+                  from_pin: Pin, 
+                  to_pin: Pin, 
+                  signal: Signal, 
+                  internal: bool = False, 
+                  awg: Optional[str] = None) -> Net:
         """ Create a net between two pins, return the created Net """
         from el_analysis.models.physical.pin import Pin
         if not isinstance(from_pin, Pin) or not isinstance(to_pin, Pin):
@@ -204,7 +209,7 @@ class Interface(Addressable):
             # logging.debug(f"Net {net_name} already exists in interface {self.name}, returning existing net.")
             return self._nets[net_name]
 
-        net = signal.make_net(from_pin, to_pin)
+        net = signal.make_net(from_pin, to_pin, awg=awg)
         from_pin._attach_net(net)
         to_pin._attach_net(net)
         if internal:

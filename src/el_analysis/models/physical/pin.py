@@ -53,9 +53,6 @@ class Pin(Addressable):
     @property
     def signal(self) -> Optional[Signal]:
         """Returns the signal attached the connection on this pin, if any."""
-        # if self.connection:
-        #     None
-            # return self.connection.signal
         for net in self.nets:
             if net.signal is not None:
                 return net.signal
@@ -91,6 +88,13 @@ class Pin(Addressable):
 
         self.nets.append(net)
         return net
+    
+    @property
+    def awg(self) -> Optional[str]:
+        awg = None
+        for net in self.nets:
+            if net.awg is not None:
+                return net.awg
 
 
     def __repr__(self):

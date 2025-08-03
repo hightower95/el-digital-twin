@@ -70,7 +70,7 @@ connections = read_connections_from_file(filepath)
 
 
 for connection in connections:
-    connection = project.create_connection(connection.source, connection.destination, signal_name=connection.signal_name)
+    connection = project.create_connection(connection.source, connection.destination, signal_name=connection.signal_name, awg=connection.awg)
    
 # headers, data_rows = project.create_interface_summary()
 

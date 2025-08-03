@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import List
-from el_analysis import BWAnalysis
+# from el_analysis import BWAnalysis
 
 # @dataclass(frozen=True)
 # class ProjectDocs:
@@ -26,11 +26,4 @@ project.create_device_summary()
 
 connections = project.interfaces
 
-# 1. Check pallitability
 
-# There are specialized summaries to enable specific analysis tasks
-new_project.create_summary_for_bw_analysis(
-    connections =[("CW100.X1", "PDU.X1"),
-                  ("CW100.X2", "PDU.X2"),
-                  ("CW100.X3", "PDU.X3")]
-)
