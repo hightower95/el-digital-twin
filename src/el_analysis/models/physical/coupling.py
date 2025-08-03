@@ -21,7 +21,7 @@ class Coupling(Connection):
             raise TypeError("Both source and destination must be of type Interface for a Coupling.")
         logging.debug(f"Created Coupling: {self.source.address} <-> {self.destination.address}")
 
-    def get_connection_hash(self, minified: bool = False, ordered: bool = True) -> str:
+    def get_connection_hash(self, minified: bool = False, ordered: bool = True, minify_keying: bool = False) -> str:
         """Returns a unique hash for the coupling connection."""
         from el_analysis.models.physical.interface import Interface
         a = self.source 
@@ -44,7 +44,7 @@ class Coupling(Connection):
         if a.connector is None or b.connector is None:
             raise ValueError("Both source and destination must have connectors for a coupling.")
 
-        return f"<{a.connector.minified_part_code}::{b.connector.minified_part_code}>"
+        return f"<{a.connector.get_minified_part_code(include_keying=minify_keying)}::{b.connector.get_minified_part_code(include_keying=minify_keying)}>"
 
     @property
     def connection_hash(self) -> str:

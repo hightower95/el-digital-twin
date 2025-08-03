@@ -18,43 +18,14 @@ class Compatibility(Enum):
     NO_MATCH = "no_match"
     UNKNOWN = "unknown"
 
-def signal_compatible(bw: BreakoutWire, coupling: Coupling) -> Compatibility:
-    """
-    Determines if the breakout wire is compatible with the given coupling.
-    
-    Args:
-        bw (BreakoutWire): The breakout wire to check.
-        coupling (Coupling): The coupling to check against.
-    
-    Returns:
-        Compatibility: An enum indicating the compatibility status.
-    """
-    if bw.compatible_with_interface(coupling.interface):
-        return Compatibility.COMPATIBLE
-    else:
-        return Compatibility.NO_MATCH
-    
-def connector_compatible(bw: BreakoutWire, connector: Connector, ignore_keying=False) -> Compatibility:
-    """
-    Determines if the breakout wire is compatible with the given connector.
-    
-    Args:
-        bw (BreakoutWire): The breakout wire to check.
-        connector (Connector): The connector to check against.
-    
-    Returns:
-        Compatibility: An enum indicating the compatibility status.
-    """
-    if bw.compatible_with_interface(connector.interface):
-        return Compatibility.COMPATIBLE
-    else:
-        return Compatibility.NO_MATCH
     
 
 class BreakoutWire:
-    def __init__(self, wire_id: str, length: float, resistance: float):
-        self._x : Interface = None  # Placeholder for the first connection point
-
+    def __init__(self):
+        self._x : Interface  # Placeholder for the first connection point
+        self._x1 : Interface  # Placeholder for the second connection point
+        self._x2 : Interface  # Placeholder for the third connection point
+        self._coupling : Coupling
         self.name : str
         pass
 
@@ -63,7 +34,7 @@ class BreakoutWire:
         """
         Returns a unique identifier for the wire based on its ID.
         """
-        return self.wire_id
+        return self._coupling.get_connection_hash(minified=True)
 
     def compatible_with_interface(self, interface: str) -> bool:
         """
@@ -90,6 +61,13 @@ class BreakoutWire:
         Returns:
             BreakoutWire: An instance of BreakoutWire.
         """
+
+        for channel in coupling.get_channels():
+            if channel.signal is None:
+                raise ValueError(f"Channel {channel.name} in coupling {coupling} has no signal.")
+            
+        
+        
         # Placeholder logic for creating a wire from an interface
         return cls(wire_id="default_wire", length=1.0, resistance=0.1)
 
