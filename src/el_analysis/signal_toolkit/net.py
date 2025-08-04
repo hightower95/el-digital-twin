@@ -51,3 +51,26 @@ class Net(Connection):
     def flipped(self) -> Net:
         """Returns a new Net with the source and destination flipped."""
         return Net(source=self.destination, destination=self.source, signal=self.signal)
+
+    def get_pin(self, address: Address) -> Optional[Pin]:
+        from el_analysis.models.physical.pin import Pin
+        """Returns the pin with the given address, if it exists."""
+        if not isinstance(self.source, Addressable) or not isinstance(self.destination, Addressable):
+            return None
+
+        if self.source.address.interface_address == address.interface_address:
+            if not isinstance(self.source, Pin):
+                logging.warning(f"Source {self.source} is not a Pin, cannot get pin by address {address}.")
+                return None
+            return self.source if self.source else None
+
+        elif self.destination.address.interface_address == address.interface_address:
+            if not isinstance(self.destination, Pin):
+                logging.warning(f"Destination {self.destination} is not a Pin, cannot get pin by address {address}.")
+                return None
+            return self.destination if self.destination else None
+
+        else:
+            logging.warning(f"Address {address} does not match either source or destination of net {self.net_id}.")
+
+        return None

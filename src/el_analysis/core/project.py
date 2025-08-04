@@ -284,10 +284,12 @@ class Project:
             if signal_name is not None:
                 raise ValueError("Signal name should not be provided for interface connections. Use pin connections instead.")
 
-            logging.info(f"Connected interfaces {source} to {destination}")
             if Address.product_match(source, destination):
-                logging.warning(f"Connecting interfaces {source} and {destination} from the same product. This may not be intended.")
+                logging.warning(f"Connecting interfaces {source} and {destination} from the same product. This is not allowed via create_connection")
+                return None
 
+            logging.info(f"Connected interfaces {source} to {destination}")
+            
             return_value = Interface.connect_interfaces(source_device, destination_device)
         else:
             logging.error(f"Cannot connect {source} to {destination}: incompatible types.")

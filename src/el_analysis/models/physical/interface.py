@@ -252,7 +252,7 @@ class Interface(Addressable):
 
         signal.attach_net(new_net)
 
-        if other_pin.interface is not None:
+        if other_pin.interface is not None and is_internal:
             self.connect_to(other_pin.interface)
 
         return new_net

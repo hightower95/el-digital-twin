@@ -48,3 +48,4 @@ W21,X3,41,A4,X1,41,SignalGroup-GND-7389-B, AWG16
 W21,X3,36,A4,X1,36,SignalGroup-CH-F-high, AWG24
 W21,X3,20,A4,X1,20,SignalGroup-CH-F-low, AWG24
 W21,X3,22,A4,X1,22,SignalGroup-CH-F-gnd, AWG24
+W21,X3,22,W21,X1,22,SignalGroup-CH-F-gnd, AWG24

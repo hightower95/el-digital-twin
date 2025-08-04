@@ -53,7 +53,7 @@ class Pipe:
         self.end = end
         self.channels: Dict[str, Channels] = {}  # Maps signal type to Channel object
 
-    def add_net(self, net: Net) -> Channels:
+    def add_net(self, net: Net) -> None:
         """
         Add a net to the channel manager and return the channel it belongs to.
         If the channel does not exist, create a new one.
@@ -68,19 +68,13 @@ class Pipe:
         channel = self.channels.setdefault(signal_group.signal_type, Channels(signal_group.signal_type))
         channel.add_net(net)
 
-        # channel_name = net.signal.name if net.signal else "default"
-        # if channel_name not in self.channels:
-        #     self.channels[channel_name] = Channels(channel_name)
-        
-        # self.channels[channel_name].add_net(net)
-        return channel
-
 class ChannelManager:
 
     def __init__(self, start: Addressable):
         # key is the destination address, value is a Channels object
         self.pipes: Dict[str, Pipe] = {}
         self.start: Addressable = start
+        self.pipe_cross_section: Pipe = Pipe(start, start)
 
     def _get_destination(self, net: Net) -> Addressable:
         if net.source.address.interface_address == self.start.address.interface_address:
@@ -90,7 +84,7 @@ class ChannelManager:
         else:
             raise ValueError(f"Net {net.net_id} is not compatible with ChannelManager for start address {self.start.address}.")
 
-    def add_net(self, net: Net) -> Channels:
+    def add_net(self, net: Net) -> None:
         """
         Add a net to the channel manager and return the channel it belongs to.
         If the channel does not exist, create a new one.
@@ -99,8 +93,9 @@ class ChannelManager:
         destination = self._get_destination(net)
         channels = self.pipes.setdefault(destination.address.interface_address_string, Pipe(self.start, destination))
 
-        return channels.add_net(net)
-    
+        self.pipe_cross_section.add_net(net)
+        channels.add_net(net)
+
     def print_summary(self):
         """
         Print a summary of the channels managed by this ChannelManager.
@@ -111,3 +106,6 @@ class ChannelManager:
             for signal_type, channels in pipe.channels.items():
 
                 print(f"    Signal Type: {signal_type}, Nets: {len(channels.channel_map)}, Net Groups: {[[net.signal.name for net in net_group.nets] for net_group in channels.channel_map.values()]}")
+        print(f"Cross-section Channels: {len(self.pipe_cross_section.channels)}")
+        for signal_type, channels in self.pipe_cross_section.channels.items():
+            print(f"    Signal Type: {signal_type}, Nets: {len(channels.channel_map)}, Net Groups: {[[(net.get_pin(self.start.address).name, net.signal.name) for net in net_group.nets] for net_group in channels.channel_map.values()]}")
