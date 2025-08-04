@@ -16,7 +16,7 @@ from el_analysis.connector_toolkit.connector import Connector
 from typing import Optional, Any, List
 from el_analysis import logging, config
 from el_analysis.models.physical.addressable import Addressable
-
+from el_analysis.signal_toolkit.channel_manager import ChannelManager
 
 
 class Interface(Addressable):
@@ -42,6 +42,8 @@ class Interface(Addressable):
         self._nets: Dict[str, Net] = {}  # Dictionary of nets associated with this interface
         self._internal_nets: List[Net] = []  # List of internal nets
         self._external_nets: List[Net] = []  # List of external nets
+
+        self._channels: ChannelManager = ChannelManager(self)
 
         # self._internal_nets: List['Net'] = []  # List of internal nets associated with this interface
         # self._channels: List['Channel'] = []  # List of channels associated with this interface
@@ -218,6 +220,8 @@ class Interface(Addressable):
         else:
             logging.info(f"Creating net {net.net_id} between {from_pin.name} and {to_pin.name} in interface {self.name}")
             self._external_nets.append(net)
+        
+        self._channels.add_net(net)
 
         self._nets[net_name] = net
         return net

@@ -25,7 +25,7 @@ class Net(Connection):
     '''
     # source: Addressable
     # destination: Addressable
-    signal: Optional[Signal] = None
+    signal: Signal
     # other data fields
     awg: Optional[str] = None
 

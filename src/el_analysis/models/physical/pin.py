@@ -78,9 +78,9 @@ class Pin(Addressable):
             return existing_net
         
         if net.source != self and net.destination != self:
-            logging.error(f"Net {net.net_id} does not use {self.name} as source")
-            raise ValueError(f"Net {net.net_id} does not use {self.name} as source")
-        
+            logging.error(f"Error in trying to attach net {net.net_id} - does not use pin {self.address} as either source or destination. Source: {net.source}, Destination: {net.destination}")
+            raise ValueError(f"Net {net.net_id} does not use {self.name} as either source or destination.")
+
         for existing_net in self.nets:
             if existing_net.signal != net.signal and existing_net.signal is not None and net.signal is not None:
                 logging.warning(f"Pin at {self.address} already has a net with a different signal {existing_net.signal}, new net has signal {net.signal}. This may cause issues.") 

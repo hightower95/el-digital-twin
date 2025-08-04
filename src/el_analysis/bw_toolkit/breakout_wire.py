@@ -63,8 +63,11 @@ class BreakoutWire:
         """
 
         for channel in coupling.get_channels():
-            if channel.signal is None:
-                raise ValueError(f"Channel {channel.name} in coupling {coupling} has no signal.")
+            new_channel = minify_channel(channel)
+            for pin in new_channel.pins:
+                self._x1.add_pin(pin)
+                self._x2.add_pin(pin)
+            
             
         
         

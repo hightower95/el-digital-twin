@@ -92,7 +92,8 @@ if __name__ == "__main__":
         if interface.signal_count > 0:
             print(f"Interface: {interface.name}")
 
-            print(interface.get_channels())
+            # print(interface.get_channels())
+            print(interface._channels.print_summary())
 
         # print(f" {signal.name} connections: ")
         # for touchpoint in signal.touchpoints:

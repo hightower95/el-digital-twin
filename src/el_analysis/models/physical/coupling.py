@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 
 print(f"Loaded {__name__} module successfully.")
 if TYPE_CHECKING:
-    from el_analysis.models import Interface, Connection, Signal, Pin
+    from el_analysis.models import Interface, Connection, Pin
     from el_analysis import Address
 
 from dataclasses import dataclass
@@ -45,6 +45,14 @@ class Coupling(Connection):
             raise ValueError("Both source and destination must have connectors for a coupling.")
 
         return f"<{a.connector.get_minified_part_code(include_keying=minify_keying)}::{b.connector.get_minified_part_code(include_keying=minify_keying)}>"
+
+    def get_channels(self) -> list[Channel]:
+        """Returns a list of channels in the coupling."""
+        if not isinstance(self.source, Interface) or not isinstance(self.destination, Interface):
+            raise TypeError("Both source and destination must be of type Interface for a Coupling.")
+        self.source.get_channels()
+        self.destination.get_channels()
+        return [self.source, self.destination]
 
     @property
     def connection_hash(self) -> str:
