@@ -293,8 +293,10 @@ complicated_1 = [
     ConnectionCharacteristic("E", "CAN E Low", "AWG 24", "TW2.SH3.SH1.CB1"),
     ConnectionCharacteristic("F", "CAN E GND", "",
                              "SH1.CB1", connects_to="SH3"),
-    ConnectionCharacteristic("G", "Something Power", "AWG 12", "SH1.CB1"),
+    ConnectionCharacteristic("G", "Something Power", "AWG 12", "SH4.SH1.CB1"),
     ConnectionCharacteristic("H", "Something Power", "AWG 12", "SH1.CB1"),
+    ConnectionCharacteristic("I", "Something Power GND", "",
+                             "SH1.CB1", connects_to="SH4"),
 ]
 
 
@@ -392,15 +394,35 @@ def can_signals_from_a_go_into_b_bundlewise(connector_a: Connector, connector_b:
     filtered_bundles_b = _filter_bundles(connector_b.bundles)
 
     print("Filtered bundles A", filtered_bundles_a)
-
+    bundle_compatibility = {}
     for bundle_a in filtered_bundles_a:
+        bundle_handled = False
         for bundle_b in filtered_bundles_b:
+            if bundle_a.barcode != bundle_b.barcode:
+                continue
+
             if bundle_a.is_compatible_with(bundle_b):
+                bundle_compatibility[bundle_a.barcode] = True
                 print(
-                    f"Bundle {bundle_a.minified_name} is compatible with {bundle_b.minified_name}")
+                    f"Bundle connector conn a's {bundle_a.name} is compatible with conn b's {bundle_b.name}")
             else:
+                bundle_compatibility[bundle_a.barcode] = False
                 print(
-                    f"Bundle {bundle_a.minified_name} is NOT compatible with {bundle_b.minified_name}")
+                    f"Bundle connector conn a's {bundle_a.name} is NOT compatible with conn b's {bundle_b.name}")
+            bundle_handled = True
+            break
+        if not bundle_handled:
+            print(
+                f"Bundle connector conn a's {bundle_a.name} has no matching bundle in conn b")
+            bundle_compatibility[bundle_a.barcode] = False
+
+    all_bundles_compatible = all(bundle_compatibility.values())
+    if not all_bundles_compatible:
+        print(" - Incompatible due to bundle compatibility")
+        return False
+    else:
+        print("All bundles compatible")
+        return True
 
 
 # def can_a_go_into_b(connector_a: Connector, connector_b: Connector) -> bool:
@@ -408,13 +430,13 @@ def can_signals_from_a_go_into_b_bundlewise(connector_a: Connector, connector_b:
 
     # AWG comparison
 
-    # print(create_connection_dataframe(simple_can))
-conn_1 = get_connector_from_connections(simple_can)
-conn_2 = get_connector_from_connections(simple_can_shifted)
+conn_1 = get_connector_from_connections(complicated_1)
+conn_2 = get_connector_from_connections(double_can)
 
 # conn_1.summarise_bundles()
 
 can_signals_from_a_go_into_b_bundlewise(conn_1, conn_2)
+can_signals_from_a_go_into_b_bundlewise(conn_2, conn_1)
 # can_signals_from_a_go_into_b_bundlewise(conn_2, conn_1)
 
 # conn_2 = get_connector_from_connections(simple_rs422)
